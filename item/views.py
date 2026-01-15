@@ -2,10 +2,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
 from urllib.parse import quote
 
 from .forms import NewItemForm, EditItemForm, ItemRequestForm
-from .models import Category, Item
+from .models import Category, Item, City, Place
 
 
 def category(request, pk ):
@@ -36,7 +37,8 @@ def detail(request, pk):
             # Build WhatsApp message
             customer_name = form.cleaned_data['customer_name']
             customer_phone = form.cleaned_data['customer_phone']
-            message = form.cleaned_data.get('message', '')
+            city = form.cleaned_data.get('city')
+            place = form.cleaned_data.get('place')
             
             whatsapp_message = f"Hello! I'm interested in purchasing:\n\n"
             whatsapp_message += f"Item: {item.name}\n"
@@ -46,8 +48,10 @@ def detail(request, pk):
             whatsapp_message += f"\nMy Information:\n"
             whatsapp_message += f"Name: {customer_name}\n"
             whatsapp_message += f"Phone: {customer_phone}\n"
-            if message:
-                whatsapp_message += f"\nMessage: {message}\n"
+            if city:
+                whatsapp_message += f"City: {city.name}\n"
+            if place:
+                whatsapp_message += f"Place of Delivery: {place.name}\n"
             
             # Encode message for URL
             encoded_message = quote(whatsapp_message)
@@ -130,3 +134,9 @@ def delete(request, pk):
     item.delete()
 
     return redirect('base:index')
+
+def get_places_by_city(request, city_id):
+    """API endpoint to fetch places for a given city"""
+    places = Place.objects.filter(city_id=city_id).order_by('name')
+    places_data = [{'id': place.id, 'name': place.name} for place in places]
+    return JsonResponse({'places': places_data})

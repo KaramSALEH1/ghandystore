@@ -24,10 +24,33 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
+class City(models.Model):
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'Cities'
+    
+    def __str__(self):
+        return self.name
+
+class Place(models.Model):
+    city = models.ForeignKey(City, related_name='places', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'Places'
+    
+    def __str__(self):
+        return f"{self.city.name} - {self.name}"
+
 class ItemRequest(models.Model):
     item = models.ForeignKey(Item, related_name='requests', on_delete=models.CASCADE)
     customer_name = models.CharField(max_length=255)
     customer_phone = models.CharField(max_length=20)
+    city = models.ForeignKey(City, related_name='requests', on_delete=models.SET_NULL, null=True, blank=True)
+    place = models.ForeignKey(Place, related_name='requests', on_delete=models.SET_NULL, null=True, blank=True)
     message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_contacted = models.BooleanField(default=False)

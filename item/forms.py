@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Item, ItemRequest
+from .models import Item, ItemRequest, City, Place
 
 INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
 
@@ -48,7 +48,7 @@ class EditItemForm(forms.ModelForm):
 class ItemRequestForm(forms.ModelForm):
     class Meta:
         model = ItemRequest
-        fields = ('customer_name', 'customer_phone', 'message')
+        fields = ('customer_name', 'customer_phone', 'city', 'place')
         widgets = {
             'customer_name': forms.TextInput(attrs={
                 'class': INPUT_CLASSES,
@@ -59,14 +59,49 @@ class ItemRequestForm(forms.ModelForm):
                 'placeholder': 'رقم الهاتف للتواصل',
                 'type': 'tel'
             }),
-            'message': forms.Textarea(attrs={
+            'city': forms.Select(attrs={
                 'class': INPUT_CLASSES,
-                'placeholder': 'مكان التواجد من اجل الشحن',
-                'rows': 4
+                'id': 'id_city'
+            }),
+            'place': forms.Select(attrs={
+                'class': INPUT_CLASSES,
+                'id': 'id_place',
+                'disabled': True
             })
         }
         labels = {
             'customer_name': 'Name',
             'customer_phone': 'Phone Number',
-            'message': 'Message'
+            'city': 'City',
+            'place': 'Place of Delivery'
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['city'].required = True
+        self.fields['place'].required = True
+        self.fields['city'].queryset = City.objects.all().order_by('name')
+        self.fields['place'].queryset = Place.objects.none()
+        
+        if 'city' in self.data:
+            try:
+                city_id = int(self.data.get('city'))
+                self.fields['place'].queryset = Place.objects.filter(city_id=city_id).order_by('name')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            if self.instance.city:
+                self.fields['place'].queryset = self.instance.city.places.order_by('name')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        city = cleaned_data.get('city')
+        place = cleaned_data.get('place')
+        
+        if city and place:
+            if place.city != city:
+                raise forms.ValidationError({
+                    'place': 'Selected place does not belong to the selected city.'
+                })
+        
+        return cleaned_data
