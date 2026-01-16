@@ -45,8 +45,33 @@ class Place(models.Model):
     def __str__(self):
         return f"{self.city.name} - {self.name}"
 
+class ItemColor(models.Model):
+    item = models.ForeignKey(Item, related_name='colors', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    is_sold_out = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ('name',)
+        unique_together = ('item', 'name')  # Prevent duplicate colors for same item
+    
+    def __str__(self):
+        return f"{self.item.name} - {self.name}"
+
+class ItemColorImage(models.Model):
+    color = models.ForeignKey(ItemColor, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='item_color_images')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ('created_at',)
+    
+    def __str__(self):
+        return f"{self.color.item.name} - {self.color.name} - Image"
+
 class ItemRequest(models.Model):
     item = models.ForeignKey(Item, related_name='requests', on_delete=models.CASCADE)
+    color = models.ForeignKey(ItemColor, related_name='requests', on_delete=models.SET_NULL, null=True, blank=True)
     customer_name = models.CharField(max_length=255)
     customer_phone = models.CharField(max_length=20)
     city = models.ForeignKey(City, related_name='requests', on_delete=models.SET_NULL, null=True, blank=True)
@@ -59,4 +84,5 @@ class ItemRequest(models.Model):
         ordering = ('-created_at',)
     
     def __str__(self):
-        return f"{self.customer_name} - {self.item.name}"
+        color_info = f" - {self.color.name}" if self.color else ""
+        return f"{self.customer_name} - {self.item.name}{color_info}"

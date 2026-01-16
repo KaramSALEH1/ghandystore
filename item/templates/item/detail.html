@@ -5,12 +5,70 @@
 {% block content %}
 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
     <div class="col-span-1 md:col-span-3">
-        {% if item.image %}
-        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="rounded-xl w-full max-h-96 object-cover">
-        {% else %}
-        <div class="rounded-xl w-full max-h-96 bg-gray-200 flex items-center justify-center">
-            <p class="text-gray-400">No image available</p>
+        <!-- Color Selection -->
+        {% if colors %}
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold mb-3 text-gray-700">Select Color:</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for color in colors %}
+                <a href="{% url 'item:detail' item.id %}?color={{ color.id }}" 
+                   class="px-4 py-2 rounded-lg border-2 transition-all {% if selected_color and selected_color.id == color.id %}border-teal-500 bg-teal-50 font-semibold{% elif color.is_sold_out %}border-red-300 bg-gray-100 opacity-60 cursor-not-allowed{% else %}border-gray-300 hover:border-teal-400{% endif %}"
+                   {% if color.is_sold_out %}onclick="return false;" title="Sold Out"{% endif %}>
+                    {{ color.name }}
+                    {% if color.is_sold_out %}
+                    <span class="text-xs text-red-500 ml-1">(Sold Out)</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
         </div>
+        {% endif %}
+        
+        <!-- Main Image Display -->
+        <div class="mb-4">
+            {% if selected_color and selected_color.images.all %}
+                <!-- Show first image of selected color -->
+                <img id="mainImage" src="{{ selected_color.images.first.image.url }}" 
+                     alt="{{ item.name }} - {{ selected_color.name }}" 
+                     class="rounded-xl w-full max-h-96 object-cover">
+            {% elif item.image %}
+                <img id="mainImage" src="{{ item.image.url }}" 
+                     alt="{{ item.name }}" 
+                     class="rounded-xl w-full max-h-96 object-cover">
+            {% else %}
+                <div class="rounded-xl w-full max-h-96 bg-gray-200 flex items-center justify-center">
+                    <p class="text-gray-400">No image available</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Image Gallery for Selected Color -->
+        {% if selected_color and selected_color.images.count > 1 %}
+        <div class="grid grid-cols-4 gap-2">
+            {% for color_image in selected_color.images.all %}
+            <img src="{{ color_image.image.url }}" 
+                 alt="{{ item.name }} - {{ selected_color.name }} - Image {{ forloop.counter }}"
+                 class="rounded-lg w-full h-20 object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                 onclick="document.getElementById('mainImage').src='{{ color_image.image.url }}'">
+            {% endfor %}
+        </div>
+        {% elif selected_color and selected_color.images.count == 1 %}
+        <!-- Only one image, no gallery needed -->
+        {% elif colors %}
+        <!-- Show images for first available color if no color selected -->
+        {% for color in colors %}
+            {% if not color.is_sold_out and color.images.all %}
+                <div class="grid grid-cols-4 gap-2">
+                    {% for color_image in color.images.all %}
+                    <img src="{{ color_image.image.url }}" 
+                         alt="{{ item.name }} - {{ color.name }} - Image {{ forloop.counter }}"
+                         class="rounded-lg w-full h-20 object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                         onclick="document.getElementById('mainImage').src='{{ color_image.image.url }}'">
+                    {% endfor %}
+                </div>
+                {% break %}
+            {% endif %}
+        {% endfor %}
         {% endif %}
     </div>
     
@@ -44,6 +102,18 @@
                                 {{ message }}
                             </div>
                         {% endfor %}
+                    {% endif %}
+                    
+                    {% if form.color %}
+                    <div>
+                        <label for="{{ form.color.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form.color.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.color }}
+                        {% if form.color.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.color.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                     {% endif %}
                     
                     <div>
@@ -87,7 +157,7 @@
                     </div>
                     
                     <div class="text-sm text-gray-500 mt-2">
-                        <p>Item: <strong>{{ item.name }}</strong> - Price: <strong>{{ item.price|floatformat:2 }}</strong></p>
+                        <p>Item: <strong>{{ item.name }}</strong>{% if selected_color %} - Color: <strong>{{ selected_color.name }}</strong>{% endif %} - Price: <strong>{{ item.price|floatformat:2 }}</strong></p>
                         {% if item.description %}
                             <p class="mt-1">Description: {{ item.description|truncatewords:20 }}</p>
                         {% endif %}
@@ -158,6 +228,18 @@
                 if (citySelect.value) {
                     loadPlaces(citySelect.value, true);
                 }
+            }
+            
+            // Update main image when color is selected from dropdown
+            const colorSelect = document.getElementById('id_color');
+            if (colorSelect) {
+                colorSelect.addEventListener('change', function() {
+                    const selectedColorId = this.value;
+                    if (selectedColorId) {
+                        // Reload page with selected color
+                        window.location.href = '{% url "item:detail" item.id %}?color=' + selectedColorId;
+                    }
+                });
             }
         </script>
         

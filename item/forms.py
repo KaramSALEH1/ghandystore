@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Item, ItemRequest, City, Place
+from .models import Item, ItemRequest, City, Place, ItemColor
 
 INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
 
@@ -48,8 +48,12 @@ class EditItemForm(forms.ModelForm):
 class ItemRequestForm(forms.ModelForm):
     class Meta:
         model = ItemRequest
-        fields = ('customer_name', 'customer_phone', 'city', 'place')
+        fields = ('color', 'customer_name', 'customer_phone', 'city', 'place')
         widgets = {
+            'color': forms.Select(attrs={
+                'class': INPUT_CLASSES,
+                'id': 'id_color'
+            }),
             'customer_name': forms.TextInput(attrs={
                 'class': INPUT_CLASSES,
                 'placeholder': 'الاسم الثلاثي الكامل'
@@ -70,6 +74,7 @@ class ItemRequestForm(forms.ModelForm):
             })
         }
         labels = {
+            'color': 'Color',
             'customer_name': 'Name',
             'customer_phone': 'Phone Number',
             'city': 'City',
@@ -77,7 +82,24 @@ class ItemRequestForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        self.item = kwargs.pop('item', None)
         super().__init__(*args, **kwargs)
+        
+        # Set color queryset based on item
+        if self.item:
+            self.fields['color'].queryset = ItemColor.objects.filter(
+                item=self.item, 
+                is_sold_out=False
+            ).order_by('name')
+            if self.fields['color'].queryset.exists():
+                self.fields['color'].required = True
+            else:
+                self.fields['color'].required = False
+                self.fields['color'].widget.attrs['style'] = 'display:none;'
+        else:
+            self.fields['color'].queryset = ItemColor.objects.none()
+            self.fields['color'].required = False
+        
         self.fields['city'].required = True
         self.fields['place'].required = True
         self.fields['city'].queryset = City.objects.all().order_by('name')
@@ -97,11 +119,22 @@ class ItemRequestForm(forms.ModelForm):
         cleaned_data = super().clean()
         city = cleaned_data.get('city')
         place = cleaned_data.get('place')
+        color = cleaned_data.get('color')
         
         if city and place:
             if place.city != city:
                 raise forms.ValidationError({
                     'place': 'Selected place does not belong to the selected city.'
+                })
+        
+        if color and self.item:
+            if color.item != self.item:
+                raise forms.ValidationError({
+                    'color': 'Selected color does not belong to this item.'
+                })
+            if color.is_sold_out:
+                raise forms.ValidationError({
+                    'color': 'This color is sold out.'
                 })
         
         return cleaned_data

@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from urllib.parse import quote
 
 from .forms import NewItemForm, EditItemForm, ItemRequestForm
-from .models import Category, Item, City, Place
+from .models import Category, Item, City, Place, ItemColor
 
 
 def category(request, pk ):
@@ -22,12 +22,31 @@ def category(request, pk ):
 def detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
     related_items = Item.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:3]
+    
+    # Get all colors for this item with their images
+    colors = ItemColor.objects.filter(item=item).prefetch_related('images').order_by('name')
+    
+    # Get selected color from request (for displaying specific color images)
+    selected_color_id = request.GET.get('color', None)
+    selected_color = None
+    if selected_color_id:
+        try:
+            selected_color = ItemColor.objects.get(pk=selected_color_id, item=item)
+        except ItemColor.DoesNotExist:
+            selected_color = None
 
-    form = ItemRequestForm()
+    form = ItemRequestForm(item=item)
     show_form = False
     
     if request.method == 'POST':
-        form = ItemRequestForm(request.POST)
+        form = ItemRequestForm(request.POST, item=item)
+        # If form has a color selected (even if invalid), use it for display
+        if 'color' in form.data and form.data['color']:
+            try:
+                color_id = int(form.data['color'])
+                selected_color = ItemColor.objects.filter(pk=color_id, item=item).first()
+            except (ValueError, TypeError):
+                pass
         if form.is_valid():
             # Save the request to database
             item_request = form.save(commit=False)
@@ -37,11 +56,14 @@ def detail(request, pk):
             # Build WhatsApp message
             customer_name = form.cleaned_data['customer_name']
             customer_phone = form.cleaned_data['customer_phone']
+            color = form.cleaned_data.get('color')
             city = form.cleaned_data.get('city')
             place = form.cleaned_data.get('place')
             
             whatsapp_message = f"Hello! I'm interested in purchasing:\n\n"
             whatsapp_message += f"Item: {item.name}\n"
+            if color:
+                whatsapp_message += f"Color: {color.name}\n"
             whatsapp_message += f"Price: {item.price}\n"
             if item.description:
                 whatsapp_message += f"Description: {item.description}\n"
@@ -66,6 +88,8 @@ def detail(request, pk):
     return render(request, 'item/detail.html', {
         'item': item,
         'related_items': related_items,
+        'colors': colors,
+        'selected_color': selected_color,
         'form': form,
         'show_form': show_form
     })
