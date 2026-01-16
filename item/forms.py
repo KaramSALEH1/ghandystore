@@ -69,8 +69,8 @@ class ItemRequestForm(forms.ModelForm):
             }),
             'place': forms.Select(attrs={
                 'class': INPUT_CLASSES,
+                'placeholder': 'شركة الشحن هي مسارات و القدموس فقط في حال عدم تواجد فرع مسارات',
                 'id': 'id_place',
-                'disabled': True
             })
         }
         labels = {
