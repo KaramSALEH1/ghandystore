@@ -5,9 +5,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-va^74$f6qqlo@@us((o*i($g2el5bog1=-s75fo-$a5(^i)ls='
 
-DEBUG = False
+# Detect if we're in development or production
+# Set DJANGO_ENV=production on your production server
+DJANGO_ENV = os.environ.get('DJANGO_ENV', 'development')
 
-ALLOWED_HOSTS = ['ghandy.cloud', 'www.ghandy.cloud']
+DEBUG = (DJANGO_ENV != 'production')
+
+if DEBUG:
+    # Development settings
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ghandy.cloud', 'www.ghandy.cloud']
+else:
+    # Production settings
+    ALLOWED_HOSTS = ['ghandy.cloud', 'www.ghandy.cloud']
 
 
 INSTALLED_APPS = [
@@ -87,11 +96,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SSL/Security settings - only enabled in production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+else:
+    # Development: disable SSL redirects
+    SECURE_SSL_REDIRECT = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
