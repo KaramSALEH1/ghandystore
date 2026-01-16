@@ -34,17 +34,95 @@ def detail(request, pk):
             selected_color = ItemColor.objects.get(pk=selected_color_id, item=item)
         except ItemColor.DoesNotExist:
             selected_color = None
+    
+    # Collect all images: main item image first, then all color images
+    # If a color is selected, put that color's images first
+    all_images = []
+    selected_color_images = []
+    
+    # If color is selected, collect its images first
+    if selected_color and not selected_color.is_sold_out:
+        for color_image in selected_color.images.all():
+            selected_color_images.append({
+                'url': color_image.image.url,
+                'type': 'color',
+                'color': selected_color,
+                'color_id': selected_color.id,
+                'alt': f"{item.name} - {selected_color.name}"
+            })
+    
+    # Add main item image (only if no color selected or color has no images)
+    if item.image and (not selected_color or not selected_color_images):
+        all_images.append({
+            'url': item.image.url,
+            'type': 'main',
+            'color': None,
+            'color_id': None,
+            'alt': f"{item.name} - Main Image"
+        })
+    
+    # Add selected color images first if they exist
+    all_images.extend(selected_color_images)
+    
+    # Add other color images (excluding selected color if it was added above)
+    for color in colors:
+        if not color.is_sold_out and color != selected_color:
+            for color_image in color.images.all():
+                all_images.append({
+                    'url': color_image.image.url,
+                    'type': 'color',
+                    'color': color,
+                    'color_id': color.id,
+                    'alt': f"{item.name} - {color.name}"
+                })
 
     form = ItemRequestForm(item=item)
     show_form = False
     
     if request.method == 'POST':
         form = ItemRequestForm(request.POST, item=item)
+        # Check for color in POST data or GET parameter
+        color_id_from_post = form.data.get('color')
+        color_id_from_get = request.GET.get('color')
+        color_id_to_use = color_id_from_post or color_id_from_get
+        
         # If form has a color selected (even if invalid), use it for display
-        if 'color' in form.data and form.data['color']:
+        if color_id_to_use:
             try:
-                color_id = int(form.data['color'])
+                color_id = int(color_id_to_use)
                 selected_color = ItemColor.objects.filter(pk=color_id, item=item).first()
+                # Rebuild images list with selected color first
+                if selected_color:
+                    all_images = []
+                    selected_color_images = []
+                    if not selected_color.is_sold_out:
+                        for color_image in selected_color.images.all():
+                            selected_color_images.append({
+                                'url': color_image.image.url,
+                                'type': 'color',
+                                'color': selected_color,
+                                'color_id': selected_color.id,
+                                'alt': f"{item.name} - {selected_color.name}"
+                            })
+                    if item.image and not selected_color_images:
+                        all_images.append({
+                            'url': item.image.url,
+                            'type': 'main',
+                            'color': None,
+                            'color_id': None,
+                            'alt': f"{item.name} - Main Image"
+                        })
+                    all_images.extend(selected_color_images)
+                    for color in colors:
+                        if not color.is_sold_out and color != selected_color:
+                            for color_image in color.images.all():
+                                all_images.append({
+                                    'url': color_image.image.url,
+                                    'type': 'color',
+                                    'color': color,
+                                    'color_id': color.id,
+                                    'alt': f"{item.name} - {color.name}"
+                                })
             except (ValueError, TypeError):
                 pass
         if form.is_valid():
@@ -84,12 +162,47 @@ def detail(request, pk):
         else:
             # Form has errors, show the form
             show_form = True
+            # Preserve selected color in form initial data and ensure it's in the context
+            if selected_color:
+                form.fields['color'].initial = selected_color.id
+                # Also rebuild images list to show selected color first
+                all_images = []
+                selected_color_images = []
+                if not selected_color.is_sold_out:
+                    for color_image in selected_color.images.all():
+                        selected_color_images.append({
+                            'url': color_image.image.url,
+                            'type': 'color',
+                            'color': selected_color,
+                            'color_id': selected_color.id,
+                            'alt': f"{item.name} - {selected_color.name}"
+                        })
+                if item.image and not selected_color_images:
+                    all_images.append({
+                        'url': item.image.url,
+                        'type': 'main',
+                        'color': None,
+                        'color_id': None,
+                        'alt': f"{item.name} - Main Image"
+                    })
+                all_images.extend(selected_color_images)
+                for color in colors:
+                    if not color.is_sold_out and color != selected_color:
+                        for color_image in color.images.all():
+                            all_images.append({
+                                'url': color_image.image.url,
+                                'type': 'color',
+                                'color': color,
+                                'color_id': color.id,
+                                'alt': f"{item.name} - {color.name}"
+                            })
 
     return render(request, 'item/detail.html', {
         'item': item,
         'related_items': related_items,
         'colors': colors,
         'selected_color': selected_color,
+        'all_images': all_images,
         'form': form,
         'show_form': show_form
     })

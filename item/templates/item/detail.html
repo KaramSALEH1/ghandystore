@@ -26,11 +26,16 @@
         
         <!-- Main Image Display -->
         <div class="mb-4">
-            {% if selected_color and selected_color.images.all %}
-                <!-- Show first image of selected color -->
-                <img id="mainImage" src="{{ selected_color.images.first.image.url }}" 
-                     alt="{{ item.name }} - {{ selected_color.name }}" 
-                     class="rounded-xl w-full max-h-96 object-cover">
+            {% if all_images %}
+                {% if selected_color and selected_color.images.all %}
+                    <img id="mainImage" src="{{ selected_color.images.first.image.url }}" 
+                         alt="{{ item.name }} - {{ selected_color.name }}" 
+                         class="rounded-xl w-full max-h-96 object-cover">
+                {% else %}
+                    <img id="mainImage" src="{{ all_images.0.url }}" 
+                         alt="{{ all_images.0.alt }}" 
+                         class="rounded-xl w-full max-h-96 object-cover">
+                {% endif %}
             {% elif item.image %}
                 <img id="mainImage" src="{{ item.image.url }}" 
                      alt="{{ item.name }}" 
@@ -42,33 +47,39 @@
             {% endif %}
         </div>
         
-        <!-- Image Gallery for Selected Color -->
-        {% if selected_color and selected_color.images.count > 1 %}
-        <div class="grid grid-cols-4 gap-2">
-            {% for color_image in selected_color.images.all %}
-            <img src="{{ color_image.image.url }}" 
-                 alt="{{ item.name }} - {{ selected_color.name }} - Image {{ forloop.counter }}"
-                 class="rounded-lg w-full h-20 object-cover cursor-pointer hover:opacity-75 transition-opacity"
-                 onclick="document.getElementById('mainImage').src='{{ color_image.image.url }}'">
-            {% endfor %}
-        </div>
-        {% elif selected_color and selected_color.images.count == 1 %}
-        <!-- Only one image, no gallery needed -->
-        {% elif colors %}
-        <!-- Show images for first available color if no color selected -->
-        {% for color in colors %}
-            {% if not color.is_sold_out and color.images.all %}
-                <div class="grid grid-cols-4 gap-2">
-                    {% for color_image in color.images.all %}
-                    <img src="{{ color_image.image.url }}" 
-                         alt="{{ item.name }} - {{ color.name }} - Image {{ forloop.counter }}"
-                         class="rounded-lg w-full h-20 object-cover cursor-pointer hover:opacity-75 transition-opacity"
-                         onclick="document.getElementById('mainImage').src='{{ color_image.image.url }}'">
-                    {% endfor %}
+            <!-- Horizontal Scrollable Image Gallery -->
+        {% if all_images|length > 1 %}
+        <div class="relative">
+            <div class="flex overflow-x-auto gap-3 pb-2 scrollbar-hide" id="imageGallery" style="scroll-behavior: smooth;">
+                {% for img in all_images %}
+                <div class="flex-shrink-0 image-thumbnail" 
+                     data-color-id="{{ img.color_id|default:'' }}"
+                     {% if selected_color and img.color_id == selected_color.id and forloop.first %}id="firstColorImage"{% endif %}>
+                    <img src="{{ img.url }}" 
+                         alt="{{ img.alt }}"
+                         class="rounded-lg w-24 h-24 object-cover cursor-pointer hover:opacity-75 transition-opacity border-2 {% if selected_color and img.color_id == selected_color.id and forloop.first %}border-teal-500{% elif forloop.first and not selected_color %}border-teal-500{% else %}border-transparent hover:border-teal-300{% endif %}"
+                         onclick="changeMainImage('{{ img.url }}', this)"
+                         data-image-url="{{ img.url }}">
+                    {% if img.color %}
+                    <p class="text-xs text-center mt-1 text-gray-600">{{ img.color.name }}</p>
+                    {% elif img.type == 'main' %}
+                    <p class="text-xs text-center mt-1 text-gray-600">Main</p>
+                    {% endif %}
                 </div>
-                {% break %}
-            {% endif %}
-        {% endfor %}
+                {% endfor %}
+            </div>
+            <!-- Scroll Buttons -->
+            <button onclick="scrollGallery('left')" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 shadow-lg transition-all" style="display: none;" id="scrollLeftBtn">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <button onclick="scrollGallery('right')" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 shadow-lg transition-all" id="scrollRightBtn">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
         {% endif %}
     </div>
     
@@ -93,7 +104,7 @@
             
             <div id="requestForm" class="{% if not show_form %}hidden{% endif %}">
                 <h2 class="text-xl sm:text-2xl mb-4 font-semibold text-gray-700">Fill your information</h2>
-                <form method="post" action="{% url 'item:detail' item.id %}" class="space-y-4">
+                <form method="post" action="{% url 'item:detail' item.id %}{% if selected_color %}?color={{ selected_color.id }}{% endif %}" class="space-y-4" id="purchaseForm">
                     {% csrf_token %}
                     
                     {% if messages %}
@@ -173,7 +184,106 @@
             </div>
         </div>
         
+        <style>
+            .scrollbar-hide {
+                -ms-overflow-style: none;  /* IE and Edge */
+                scrollbar-width: none;  /* Firefox */
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;  /* Chrome, Safari and Opera */
+            }
+        </style>
+        
         <script>
+            // Image Gallery Functions
+            function changeMainImage(imageUrl, clickedElement) {
+                const mainImage = document.getElementById('mainImage');
+                if (mainImage) {
+                    mainImage.src = imageUrl;
+                    // Update border on thumbnail images
+                    const thumbnails = document.querySelectorAll('#imageGallery img');
+                    thumbnails.forEach(thumb => {
+                        thumb.classList.remove('border-teal-500');
+                        thumb.classList.add('border-transparent');
+                    });
+                    clickedElement.classList.remove('border-transparent');
+                    clickedElement.classList.add('border-teal-500');
+                }
+            }
+            
+            function scrollGallery(direction) {
+                const gallery = document.getElementById('imageGallery');
+                if (!gallery) return;
+                
+                const scrollAmount = 200;
+                if (direction === 'left') {
+                    gallery.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                } else {
+                    gallery.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+                
+                // Update button visibility
+                updateScrollButtons();
+            }
+            
+            function updateScrollButtons() {
+                const gallery = document.getElementById('imageGallery');
+                const leftBtn = document.getElementById('scrollLeftBtn');
+                const rightBtn = document.getElementById('scrollRightBtn');
+                
+                if (!gallery || !leftBtn || !rightBtn) return;
+                
+                // Show/hide left button
+                if (gallery.scrollLeft > 0) {
+                    leftBtn.style.display = 'block';
+                } else {
+                    leftBtn.style.display = 'none';
+                }
+                
+                // Show/hide right button
+                if (gallery.scrollLeft < gallery.scrollWidth - gallery.clientWidth - 10) {
+                    rightBtn.style.display = 'block';
+                } else {
+                    rightBtn.style.display = 'none';
+                }
+            }
+            
+            // Scroll to first image of selected color
+            function scrollToColorImage(colorId) {
+                if (!colorId) return;
+                const gallery = document.getElementById('imageGallery');
+                if (!gallery) return;
+                
+                const firstColorImage = document.querySelector(`.image-thumbnail[data-color-id="${colorId}"]`);
+                if (firstColorImage) {
+                    // Update main image to first color image
+                    const img = firstColorImage.querySelector('img');
+                    if (img) {
+                        changeMainImage(img.dataset.imageUrl, img);
+                    }
+                    // Scroll to the image
+                    firstColorImage.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }
+            
+            // Initialize scroll buttons on load and scroll
+            document.addEventListener('DOMContentLoaded', function() {
+                const gallery = document.getElementById('imageGallery');
+                if (gallery) {
+                    updateScrollButtons();
+                    gallery.addEventListener('scroll', updateScrollButtons);
+                    // Also check on resize
+                    window.addEventListener('resize', updateScrollButtons);
+                    
+                    // If a color is selected, scroll to its first image
+                    {% if selected_color %}
+                    setTimeout(function() {
+                        scrollToColorImage({{ selected_color.id }});
+                    }, 100);
+                    {% endif %}
+                }
+            });
+            
             document.getElementById('buyButton').addEventListener('click', function() {
                 const form = document.getElementById('requestForm');
                 const button = document.getElementById('buyButton');
@@ -235,12 +345,41 @@
             if (colorSelect) {
                 colorSelect.addEventListener('change', function() {
                     const selectedColorId = this.value;
+                    const form = document.getElementById('purchaseForm');
                     if (selectedColorId) {
-                        // Reload page with selected color
-                        window.location.href = '{% url "item:detail" item.id %}?color=' + selectedColorId;
+                        // Update form action URL
+                        if (form) {
+                            form.action = '{% url "item:detail" item.id %}?color=' + selectedColorId;
+                        }
+                        // Update URL and scroll to color images
+                        const newUrl = '{% url "item:detail" item.id %}?color=' + selectedColorId;
+                        window.history.pushState({}, '', newUrl);
+                        scrollToColorImage(selectedColorId);
+                    } else {
+                        // Reset to main image
+                        if (form) {
+                            form.action = '{% url "item:detail" item.id %}';
+                        }
+                        const mainImage = document.getElementById('mainImage');
+                        const firstImg = document.querySelector('#imageGallery img');
+                        if (mainImage && firstImg) {
+                            changeMainImage(firstImg.dataset.imageUrl, firstImg);
+                        }
                     }
                 });
             }
+            
+            // Update form action when color buttons are clicked
+            document.querySelectorAll('a[href*="?color="]').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    const url = new URL(this.href);
+                    const colorId = url.searchParams.get('color');
+                    const form = document.getElementById('purchaseForm');
+                    if (form && colorId) {
+                        form.action = '{% url "item:detail" item.id %}?color=' + colorId;
+                    }
+                });
+            });
         </script>
         
     </div>

@@ -9,14 +9,36 @@ admin.site.register(Category)
 
 class ItemColorImageInline(admin.TabularInline):
     model = ItemColorImage
-    extra = 1
-    fields = ('image', 'created_at')
-    readonly_fields = ('created_at',)
+    extra = 3
+    fields = ('image',)
+    verbose_name = 'Color Image'
+    verbose_name_plural = 'Color Images'
 
-class ItemColorInline(admin.TabularInline):
+class ItemColorInline(admin.StackedInline):
     model = ItemColor
     extra = 1
-    fields = ('name', 'is_sold_out')
+    fields = ('name', 'is_sold_out', 'images_info', 'edit_link')
+    readonly_fields = ('images_info', 'edit_link')
+    
+    def images_info(self, obj):
+        if obj.pk:
+            images = obj.images.all()
+            if images:
+                html = '<div style="margin: 10px 0;"><strong>Images ({})</strong><div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">'.format(images.count())
+                for img in images:
+                    html += f'<img src="{img.image.url}" style="max-height: 80px; max-width: 80px; border: 1px solid #ddd; padding: 5px; border-radius: 4px;" />'
+                html += '</div></div>'
+                return format_html(html)
+            return format_html('<p style="color: #999; font-style: italic; margin: 10px 0;">No images yet. Click "Edit Color" below to add images.</p>')
+        return format_html('<p style="color: #999; font-style: italic; margin: 10px 0;">💡 Save this item first, then click "Edit Color" to add images.</p>')
+    images_info.short_description = 'Images'
+    
+    def edit_link(self, obj):
+        if obj.pk:
+            url = f'/admin/item/itemcolor/{obj.pk}/change/'
+            return format_html('<a href="{}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #417690; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;">📷 Edit Color & Add Images</a>', url)
+        return format_html('<p style="color: #999; font-size: 12px; margin-top: 10px;">Save item first to add images</p>')
+    edit_link.short_description = 'Actions'
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
