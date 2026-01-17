@@ -307,7 +307,7 @@
 
                 const selectedPlaceId = preserveSelected ? placeSelect.value : null;
 
-                const url = '/item/api/places/' + cityId + '/';
+                let url = "{% url 'item:get_places_by_city' city_id=0 %}".replace('0', cityId);
                 fetch(url)
                     .then(response => response.json())
                     .then(data => {
