@@ -1,3 +1,8 @@
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
@@ -9,17 +14,115 @@ from .forms import NewItemForm, EditItemForm, ItemRequestForm
 from .models import Category, Item, City, Place, ItemColor
 
 
-def category(request, pk ):
-    category= Category.objects.get(pk=pk)
-    item = Item.objects.filter(category=category , is_sold=False).exclude(pk=pk)[0:9]
+def _ns(value):
+    if isinstance(value, dict):
+        return SimpleNamespace(**{k: _ns(v) for k, v in value.items()})
+    if isinstance(value, list):
+        return [_ns(v) for v in value]
+    return value
 
-    return render(request, 'item/category.html',{
-        'item': item,
+
+def _load_mock_json(filename: str):
+    base_dir: Path = getattr(settings, 'MOCK_DATA_DIR', Path(settings.BASE_DIR) / 'mock-data')
+    path = base_dir / filename
+    with path.open('r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _mock_catalog():
+    categories = _ns(_load_mock_json('categories.json'))
+    items = _ns(_load_mock_json('items.json'))
+    colors = _ns(_load_mock_json('item-colors.json'))
+    return categories, items, colors
+
+
+def category(request, pk ):
+    if getattr(settings, 'USE_MOCK_DATA', False):
+        categories, items, _colors = _mock_catalog()
+        category_obj = next((c for c in categories if int(c.id) == int(pk)), None)
+        page_items = [i for i in items if int(i.category_id) == int(pk) and not bool(getattr(i, 'is_sold', False))][0:9]
+        return render(request, 'item/CategoryPage.html', {
+            'items': page_items,
+            'category': category_obj or SimpleNamespace(id=pk, name='Category'),
+            'is_mock_data': True,
+        })
+
+    category = Category.objects.get(pk=pk)
+    items = Item.objects.filter(category=category , is_sold=False)[0:9]
+
+    return render(request, 'item/CategoryPage.html', {
+        'items': items,
         'category': category,
     })
 
 
 def detail(request, pk):
+    if getattr(settings, 'USE_MOCK_DATA', False):
+        categories, items, colors = _mock_catalog()
+        item_obj = next((i for i in items if int(i.id) == int(pk)), None)
+        if not item_obj:
+            item_obj = SimpleNamespace(
+                id=pk,
+                name='Item',
+                price='0',
+                description='',
+                category_id=1,
+                image_url='https://picsum.photos/seed/ghandy-fallback/1200/900',
+            )
+
+        related_items = [i for i in items if int(i.category_id) == int(item_obj.category_id) and int(i.id) != int(pk) and not bool(getattr(i, 'is_sold', False))][0:3]
+
+        item_colors = [c for c in colors if int(c.item_id) == int(item_obj.id)]
+        item_colors = sorted(item_colors, key=lambda c: (c.name or '').lower())
+
+        selected_color_id = request.GET.get('color', None)
+        selected_color = next((c for c in item_colors if selected_color_id and str(c.id) == str(selected_color_id)), None)
+
+        all_images = []
+        selected_color_images = []
+        if selected_color and not bool(getattr(selected_color, 'is_sold_out', False)):
+            for img in getattr(selected_color, 'images', []) or []:
+                selected_color_images.append({
+                    'url': img.url,
+                    'type': 'color',
+                    'color': selected_color,
+                    'color_id': selected_color.id,
+                    'alt': getattr(img, 'alt', f"{item_obj.name} - {selected_color.name}"),
+                })
+
+        if getattr(item_obj, 'image_url', None) and (not selected_color or not selected_color_images):
+            all_images.append({
+                'url': item_obj.image_url,
+                'type': 'main',
+                'color': None,
+                'color_id': None,
+                'alt': f"{item_obj.name} - Main Image",
+            })
+
+        all_images.extend(selected_color_images)
+
+        for c in item_colors:
+            if bool(getattr(c, 'is_sold_out', False)) or c == selected_color:
+                continue
+            for img in getattr(c, 'images', []) or []:
+                all_images.append({
+                    'url': img.url,
+                    'type': 'color',
+                    'color': c,
+                    'color_id': c.id,
+                    'alt': getattr(img, 'alt', f"{item_obj.name} - {c.name}"),
+                })
+
+        return render(request, 'item/ProductDetailPage.html', {
+            'item': item_obj,
+            'related_items': related_items,
+            'colors': item_colors,
+            'selected_color': selected_color,
+            'all_images': all_images,
+            'show_form': False,
+            'is_mock_data': True,
+        })
+
     item = get_object_or_404(Item, pk=pk)
     related_items = Item.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:3]
     
@@ -197,7 +300,7 @@ def detail(request, pk):
                                 'alt': f"{item.name} - {color.name}"
                             })
 
-    return render(request, 'item/detail.html', {
+    return render(request, 'item/ProductDetailPage.html', {
         'item': item,
         'related_items': related_items,
         'colors': colors,
@@ -210,6 +313,28 @@ def detail(request, pk):
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)
+    if getattr(settings, 'USE_MOCK_DATA', False):
+        categories, items, _colors = _mock_catalog()
+        filtered_items = [i for i in items if not bool(getattr(i, 'is_sold', False))]
+
+        if category_id:
+            filtered_items = [i for i in filtered_items if int(i.category_id) == int(category_id)]
+
+        if query:
+            q = query.lower().strip()
+            filtered_items = [
+                i for i in filtered_items
+                if q in (getattr(i, 'name', '') or '').lower() or q in (getattr(i, 'description', '') or '').lower()
+            ]
+
+        return render(request, 'item/ProductListingPage.html', {
+            'items': filtered_items,
+            'query': query,
+            'categories': categories,
+            'category_id': int(category_id) if category_id else 0,
+            'is_mock_data': True,
+        })
+
     categories = Category.objects.all()
     items = Item.objects.filter(is_sold=False)
 
@@ -219,7 +344,7 @@ def items(request):
     if query:
         items = items.filter(Q(name__icontains=query) | Q(description__icontains=query))
 
-    return render(request, 'item/items.html', {
+    return render(request, 'item/ProductListingPage.html', {
         'items': items,
         'query': query,
         'categories': categories,

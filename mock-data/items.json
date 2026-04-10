@@ -1,0 +1,84 @@
+[
+  {
+    "id": 1,
+    "name": "Indigo Patchwork Tote",
+    "price": "110",
+    "description": "A calm, structured tote in deep indigo tones. Patchworked panels create a tactile rhythm; finished with softened edges and a warm interior lining.",
+    "category_id": 1,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-tote-1/1200/900"
+  },
+  {
+    "id": 2,
+    "name": "Sandstone Fold Clutch",
+    "price": "78",
+    "description": "A folded clutch with a quiet sheen and a soft hand-feel. Designed for evenings that don’t need noise.",
+    "category_id": 2,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-clutch-1/1200/900"
+  },
+  {
+    "id": 3,
+    "name": "Cocoa Studio Bag",
+    "price": "95",
+    "description": "Warm cocoa tones with subtle grain. A studio staple that holds shape, yet feels gentle.",
+    "category_id": 3,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-bag-1/1200/900"
+  },
+  {
+    "id": 4,
+    "name": "Ivory Linen Tote",
+    "price": "105",
+    "description": "A light-toned tote with linen character and minimal hardware. Airy, soft, intentional.",
+    "category_id": 1,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-tote-2/1200/900"
+  },
+  {
+    "id": 5,
+    "name": "Midnight Frame Clutch",
+    "price": "82",
+    "description": "A midnight clutch with a clean frame silhouette. Understated shine; editorial presence.",
+    "category_id": 2,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-clutch-2/1200/900"
+  },
+  {
+    "id": 6,
+    "name": "Hazel Shoulder Bag",
+    "price": "99",
+    "description": "A softly rounded shoulder bag with hazel warmth and subtle stitching lines.",
+    "category_id": 3,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-bag-2/1200/900"
+  },
+  {
+    "id": 7,
+    "name": "Sunwashed Mini Tote",
+    "price": "88",
+    "description": "A mini tote with sunwashed tones and a tactile weave. Small, but composed.",
+    "category_id": 1,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-tote-3/1200/900"
+  },
+  {
+    "id": 8,
+    "name": "Cream Envelope Clutch",
+    "price": "72",
+    "description": "Envelope clutch in cream with a whisper-soft texture. Clean edges, calm proportions.",
+    "category_id": 2,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-clutch-3/1200/900"
+  },
+  {
+    "id": 9,
+    "name": "Clay Weekend Bag",
+    "price": "135",
+    "description": "A larger carry with clay tones and gentle structure—made for weekends and studio days.",
+    "category_id": 3,
+    "is_sold": false,
+    "image_url": "https://picsum.photos/seed/ghandy-bag-3/1200/900"
+  }
+]
+

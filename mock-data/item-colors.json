@@ -1,0 +1,40 @@
+[
+  {
+    "id": 101,
+    "item_id": 1,
+    "name": "Indigo",
+    "is_sold_out": false,
+    "images": [
+      { "url": "https://picsum.photos/seed/ghandy-indigo-1/1200/900", "alt": "Indigo texture close-up" },
+      { "url": "https://picsum.photos/seed/ghandy-indigo-2/1200/900", "alt": "Indigo patchwork detail" }
+    ]
+  },
+  {
+    "id": 102,
+    "item_id": 1,
+    "name": "Sand",
+    "is_sold_out": false,
+    "images": [
+      { "url": "https://picsum.photos/seed/ghandy-sand-1/1200/900", "alt": "Sand tone texture" }
+    ]
+  },
+  {
+    "id": 103,
+    "item_id": 2,
+    "name": "Stone",
+    "is_sold_out": false,
+    "images": [
+      { "url": "https://picsum.photos/seed/ghandy-stone-1/1200/900", "alt": "Stone clutch detail" }
+    ]
+  },
+  {
+    "id": 104,
+    "item_id": 3,
+    "name": "Cocoa",
+    "is_sold_out": false,
+    "images": [
+      { "url": "https://picsum.photos/seed/ghandy-cocoa-1/1200/900", "alt": "Cocoa bag close-up" }
+    ]
+  }
+]
+

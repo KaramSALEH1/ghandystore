@@ -1,0 +1,60 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Shop{% endblock %}
+
+{% block content %}
+    <section class="editorial-panel p-4 sm:p-5 lg:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+            <div>
+                <div class="tiny-label">Product listing</div>
+                <h1 class="text-3xl sm:text-4xl tracking-tight">Refined everyday pieces</h1>
+            </div>
+            <div class="text-sm text-black/60">
+                <span class="font-medium text-black/80">{{ items|length }}</span> pieces available
+            </div>
+        </div>
+
+        <form method="get" action="{% url 'item:items' %}" class="mt-5 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{% url 'item:items' %}" class="editorial-pill">All</a>
+                {% for category in categories %}
+                    <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
+                       class="editorial-pill {% if category.id == category_id %}bg-cloud-secondary border-black/20{% endif %}">
+                        {{ category.name }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input name="query" class="cottage-input flex-1" type="text" value="{{ query }}" placeholder="Search products">
+                <button class="cottage-button" type="submit">Search</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="mt-6 editorial-panel p-4 sm:p-5 lg:p-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for item in items %}
+                <a href="{% url 'item:detail' item.id %}" class="product-mini-card editorial-card overflow-hidden">
+                    <div class="editorial-image aspect-[1/1.02] rounded-b-none bg-cloud-secondary/40">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                        {% else %}
+                            <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="p-3 sm:p-4">
+                        <h2 class="text-lg sm:text-xl leading-tight tracking-tight">{{ item.name }}</h2>
+                        <p class="mt-1 text-xs sm:text-sm text-black/60">£{{ item.price }}</p>
+                        <div class="mt-2 flex items-center gap-1.5">
+                            <span class="h-2.5 w-2.5 rounded-full bg-[#d6bf8f]"></span>
+                            <span class="h-2.5 w-2.5 rounded-full bg-[#e7dccb]"></span>
+                            <span class="h-2.5 w-2.5 rounded-full bg-[#5e4a43]"></span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
+

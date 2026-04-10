@@ -1,0 +1,77 @@
+{% extends 'base/base.html' %}
+
+{% block title %}{{ category }}{% endblock %}
+
+{% block content %}
+    <section class="editorial-panel p-4 sm:p-6 lg:p-7 overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-4">
+                <div class="tiny-label">Category page</div>
+                <h1 class="mt-2 text-4xl sm:text-5xl tracking-tight">{{ category.name|default:category }}</h1>
+                <p class="mt-3 max-w-sm text-sm sm:text-base text-black/70 leading-relaxed">
+                    A softer category story with large compositions, reduced noise and a boutique editorial rhythm.
+                </p>
+                <div class="mt-6 flex flex-wrap gap-2">
+                    <a href="{% url 'item:items' %}?category={{ category.id }}" class="cottage-button">Browse collection</a>
+                    <a href="{% url 'item:items' %}" class="cottage-button-secondary">All products</a>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 relative">
+                <div class="editorial-mosaic min-h-[400px]">
+                    <div class="editorial-mosaic-tall">
+                        {% for item in items|slice:":2" %}
+                            <a href="{% url 'item:detail' item.id %}" class="editorial-image h-[190px] sm:h-[210px]">
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                                {% else %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                                {% endif %}
+                                <div class="absolute inset-auto left-5 bottom-4 font-serif text-[44px] leading-none text-black/80">
+                                    {% if forloop.first %}{{ category.name|default:category }}{% else %}{{ item.name|truncatewords:1 }}{% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+
+                    <div class="editorial-mosaic-tall">
+                        {% for item in items|slice:"2:4" %}
+                            <a href="{% url 'item:detail' item.id %}" class="editorial-image {% if forloop.first %}h-[260px]{% else %}h-[140px]{% endif %}">
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                                {% else %}
+                                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                                {% endif %}
+                                {% if forloop.first %}
+                                    <div class="absolute inset-auto left-5 bottom-4 font-serif text-[54px] leading-none text-black/80">{{ category.name|default:category }}</div>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="hero-glow"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mt-6 editorial-panel p-4 sm:p-5 lg:p-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for item in items %}
+                <a href="{% url 'item:detail' item.id %}" class="product-mini-card editorial-card overflow-hidden">
+                    <div class="editorial-image aspect-[1/1.02] rounded-b-none">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                        {% else %}
+                            <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="p-3 sm:p-4">
+                        <h2 class="text-lg sm:text-xl tracking-tight">{{ item.name }}</h2>
+                        <p class="mt-1 text-xs sm:text-sm text-black/60">£{{ item.price }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
+

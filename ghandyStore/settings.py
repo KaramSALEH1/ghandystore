@@ -69,9 +69,9 @@ WSGI_APPLICATION = 'ghandyStore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('MYSQL_DATABASE', 'ghandystore'),
-        'USER': os.environ.get('MYSQL_USER', 'ghandy'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'ghandyStore1'),
+        'NAME': 'ghandystore',
+        'USER': 'root',
+        'PASSWORD': '',
         'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
         'PORT': os.environ.get('MYSQL_PORT', '3306'),
         'OPTIONS': {
@@ -95,6 +95,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Optional UI preview mode: load catalog data from JSON files instead of DB.
+# Enable by setting USE_MOCK_DATA=1 in your environment.
+USE_MOCK_DATA = os.environ.get('USE_MOCK_DATA', '0') in ('1', 'true', 'True', 'yes', 'YES')
+MOCK_DATA_DIR = BASE_DIR / 'mock-data'
+
+if USE_MOCK_DATA:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'mock-data.sqlite3',
+        }
+    }
 
 # SSL/Security settings - only enabled in production
 if not DEBUG:
