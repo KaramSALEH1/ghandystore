@@ -1,0 +1,24 @@
+<header id="siteHeader" class="fixed inset-x-0 top-0 z-50 transition-all duration-200">
+    <div class="mx-auto w-full max-w-6xl px-3 sm:px-6">
+        <div id="headerSurface" class="mt-3 rounded-2xl border border-transparent bg-transparent transition-all duration-200">
+            <nav class="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+                <a href="/" class="inline-flex items-baseline gap-2">
+                    <span class="font-heading text-2xl">ghandy</span>
+                </a>
+
+                <div class="hidden items-center gap-5 md:flex">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="{% url 'item:items' %}">Bags</a>
+                    <a class="nav-link" href="{% url 'item:items' %}?category=1">Totes</a>
+                    <a class="nav-link" href="{% url 'item:items' %}?category=2">Clutch</a>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    {% url 'item:items' as item_items_url %}
+                    {% include 'base/partials/button.html' with text='Cart' variant='btn-secondary' classes='text-xs sm:text-sm' attrs='data-cart-open' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3h2l2.2 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 6H7"/><circle cx="10" cy="19" r="1.2"/><circle cx="18" cy="19" r="1.2"/></svg>' %}
+                    {% include 'base/partials/button.html' with text='Shop now' variant='btn-primary' classes='text-xs sm:text-sm' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>

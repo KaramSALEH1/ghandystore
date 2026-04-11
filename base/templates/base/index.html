@@ -3,109 +3,81 @@
 {% block title %}Welcome{% endblock %}
 
 {% block content %}
-    <section class="editorial-panel overflow-hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-6 lg:p-7">
-            <div class="lg:col-span-5 flex flex-col justify-between min-h-[400px]">
-                <div>
-                    <div class="tiny-label">Handmade textile pieces</div>
-                    <h1 class="mt-4 text-[56px] sm:text-[78px] leading-[0.88] tracking-[-0.04em]">ghandy</h1>
-                    <div class="font-arabic text-[44px] sm:text-[62px] leading-[0.95] opacity-90" dir="rtl">غندي</div>
-                    <p class="mt-5 max-w-sm text-sm sm:text-base leading-relaxed text-black/70">
-                        Handmade bags, totes, clutches and upcycled silhouettes composed with an editorial calm.
-                    </p>
-                    <a href="{% url 'item:items' %}" class="cottage-button mt-6 inline-flex w-fit">Shop collection</a>
-                </div>
-
-                <div class="pt-8">
-                    <div class="tiny-label">Narrative / textile / modern heirloom</div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-7 relative">
-                <div class="editorial-mosaic min-h-[400px]">
-                 
-                    <div class="editorial-mosaic-tall">
-                        <div class="editorial-image h-[185px] sm:h-[205px]">
-                            {% with side_item=items.1 %}
-                                {% if side_item.image %}
-                                    <img src="{{ side_item.image.url }}" alt="{{ side_item.name }}">
-                                {% else %}
-                                    <img src="{{ side_item.image_url }}" alt="{{ side_item.name }}">
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                        <!-- <div class="editorial-image h-[185px] sm:h-[205px]">
-                            {% with side_item=items.2 %}
-                                {% if side_item.image %}
-                                    <img src="{{ side_item.image.url }}" alt="{{ side_item.name }}">
-                                {% else %}
-                                    <img src="{{ side_item.image_url }}" alt="{{ side_item.name }}">
-                                {% endif %}
-                            {% endwith %}
-                        </div> -->
-                    </div>
-                </div>
-                <div class="hero-glow"></div>
-            </div>
-        </div>
-    </section>
-
-    <section class="mt-6 editorial-panel p-4 sm:p-6 lg:p-7">
-        <div class="flex items-center justify-between gap-4">
+{% url 'item:items' as item_items_url %}
+<section class="panel overflow-hidden p-4 sm:p-6 lg:p-7">
+    <div class="grid min-h-[400px] grid-cols-1 gap-6 lg:grid-cols-12">
+        <div class="flex flex-col justify-between lg:col-span-5">
             <div>
-                <h2 class="text-3xl sm:text-4xl tracking-tight">Featured Collections</h2>
+                <div class="label-micro">Handmade textile pieces</div>
+                <h1 class="mt-4 text-6xl leading-[0.9] sm:text-7xl">ghandy</h1>
+                <div class="font-arabic text-5xl leading-[0.95] opacity-90 sm:text-6xl" dir="rtl">غندي</div>
+                <p class="mt-5 max-w-sm">Handmade bags, totes, clutches and upcycled silhouettes composed with an
+                    editorial calm.</p>
+                {% include 'base/partials/button.html' with text='Shop collection' variant='btn-primary' classes='mt-6 w-fit' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
             </div>
-            <a href="{% url 'item:items' %}" class="cottage-button-secondary cottage-button-sm">See all</a>
+            <div class="pt-8">
+                <div class="label-micro">Narrative / textile / modern heirloom</div>
+            </div>
         </div>
-
-        <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {% for item in items|slice:":3" %}
-                <a href="{% url 'item:detail' item.id %}" class="product-mini-card editorial-card overflow-hidden">
-                    <div class="editorial-image aspect-[1/1.05] rounded-b-none">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                        {% else %}
-                            <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                        {% endif %}
-                    </div>
-                    <div class="p-4 sm:p-5">
-                        <h3 class="text-2xl tracking-tight">{{ item.name }}</h3>
-                        <p class="mt-1 text-sm text-black/60">Collection</p>
-                    </div>
-                </a>
-            {% endfor %}
+        <div class="relative lg:col-span-7">
+            <div class="media-frame h-[185px] sm:h-[205px]">
+                {% with side_item=items.1 %}
+                {% if side_item.image %}
+                <img src="{{ side_item.image.url }}" alt="{{ side_item.name }}">
+                {% else %}
+                <img src="{{ side_item.image_url }}" alt="{{ side_item.name }}">
+                {% endif %}
+                {% endwith %}
+            </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section class="mt-6 editorial-panel p-4 sm:p-6 lg:p-7">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div class="lg:col-span-5">
-                <h2 class="text-3xl sm:text-4xl tracking-tight">From Scraps to Stories</h2>
-                <div class="mt-5 grid grid-cols-2 gap-3">
-                    {% for item in items|slice:"3:7" %}
-                        <div class="editorial-image {% if forloop.first %}row-span-2 h-[260px]{% else %}h-[124px]{% endif %}">
-                            {% if item.image %}
-                                <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                            {% else %}
-                                <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                            {% endif %}
-                        </div>
-                    {% endfor %}
+<section class="panel mt-6 p-4 sm:p-6 lg:p-7">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <h2>Featured Collections</h2>
+        </div>
+        {% include 'base/partials/button.html' with text='See all' variant='btn-secondary btn-sm' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {% for item in items|slice:":3" %}
+        {% include 'item/partials/product_card.html' with product=item %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel mt-6 p-4 sm:p-6 lg:p-7">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="lg:col-span-5">
+            <h2>From Scraps to Stories</h2>
+            <div class="mt-5 grid grid-cols-2 gap-3">
+                {% for item in items|slice:"3:7" %}
+                <div class="media-frame {% if forloop.first %}row-span-2 h-[260px]{% else %}h-[124px]{% endif %}">
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                    {% else %}
+                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                    {% endif %}
                 </div>
-            </div>
-
-            <div class="lg:col-span-4 lg:col-start-7">
-                <div class="pt-2">
-                    <h3 class="text-2xl sm:text-3xl tracking-tight">Sustainable bags and handcrafted form pieces.</h3>
-                    <p class="mt-4 text-sm sm:text-base leading-relaxed text-black/70">
-                        Woven memory becomes a renewed silhouette. The collection draws from soft fabrics, gentle tonal shifts and thoughtful reconstruction.
-                    </p>
-                    <p class="mt-4 text-sm sm:text-base leading-relaxed text-black/70">
-                        Each piece is intended to feel quiet, tactile and gallery-like rather than loud or conventional.
-                    </p>
-                    <a href="{% url 'item:items' %}" class="cottage-button-secondary cottage-button-sm inline-flex mt-6">Read more</a>
-                </div>
+                {% endfor %}
             </div>
         </div>
-    </section>
+
+        <div class="lg:col-span-4 lg:col-start-7">
+            <div class="pt-2">
+                <h3>Sustainable bags and handcrafted form pieces.</h3>
+                <p class="mt-4">
+                    Woven memory becomes a renewed silhouette. The collection draws from soft fabrics, gentle tonal
+                    shifts and thoughtful reconstruction.
+                </p>
+                <p class="mt-4">
+                    Each piece is intended to feel quiet, tactile and gallery-like rather than loud or conventional.
+                </p>
+                {% include 'base/partials/button.html' with text='Read more' variant='btn-secondary btn-sm' classes='mt-6' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>' %}
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}

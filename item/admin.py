@@ -17,7 +17,7 @@ class ItemColorImageInline(admin.TabularInline):
 class ItemColorInline(admin.StackedInline):
     model = ItemColor
     extra = 1
-    fields = ('name', 'is_sold_out', 'images_info', 'edit_link')
+    fields = ('name', 'hex_code', 'is_sold_out', 'images_info', 'edit_link')
     readonly_fields = ('images_info', 'edit_link')
     
     def images_info(self, obj):
@@ -67,7 +67,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 @admin.register(ItemColor)
 class ItemColorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'item', 'is_sold_out', 'images_count', 'created_at')
+    list_display = ('name', 'hex_code', 'item', 'is_sold_out', 'images_count', 'created_at')
     list_filter = ('is_sold_out', 'created_at', 'item__category')
     search_fields = ('name', 'item__name')
     readonly_fields = ('created_at',)

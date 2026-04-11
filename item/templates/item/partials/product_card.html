@@ -1,0 +1,15 @@
+<a href="{% url 'item:detail' product.id %}" class="card-soft overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+    <div class="media-frame aspect-[1/1.04] rounded-b-none bg-secondary-100/70">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% elif product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        {% else %}
+            <div class="flex h-full w-full items-center justify-center bg-neutral-200/60 text-sm text-neutral-500">No image</div>
+        {% endif %}
+    </div>
+    <div class="p-4">
+        <h3 class="text-lg sm:text-xl">{{ product.name }}</h3>
+        <p class="mt-1 text-sm text-neutral-600">£{{ product.price|floatformat:2 }}</p>
+    </div>
+</a>

@@ -1,5 +1,15 @@
+import re
+
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
+
+
+def validate_optional_hex(value: str) -> None:
+    if not value:
+        return
+    if not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
+        raise ValidationError("Enter a valid hex color like #RRGGBB.")
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
@@ -48,6 +58,13 @@ class Place(models.Model):
 class ItemColor(models.Model):
     item = models.ForeignKey(Item, related_name='colors', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    hex_code = models.CharField(
+        max_length=7,
+        blank=True,
+        default="",
+        validators=[validate_optional_hex],
+        help_text="Optional display swatch, e.g. #4B0082",
+    )
     is_sold_out = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
