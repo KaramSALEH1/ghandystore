@@ -107,9 +107,33 @@
                         </svg>' %}
                     </div>
                     <div class="flex-1 space-y-4 overflow-auto p-5 sm:p-6">
-                        <div class="card-soft p-5">
-                            <p class="text-lg font-heading text-neutral-900">A quiet cart - coming soon.</p>
+                        {% if global_cart.cart %}
+                            {% for key, value in global_cart.cart.items %}
+                            <div class="card-soft flex items-center gap-4 p-4">
+                                <div class="flex-1">
+                                    <p class="font-heading text-lg text-neutral-900">{{ value.name }}</p>
+                                    <p class="text-sm text-neutral-500">{{ value.qty }} × {{ value.price }} ل.س</p>
+                                </div>
+                                <p class="font-medium text-neutral-900">{% widthratio value.price 1 value.qty %} ل.س</p>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="card-soft p-5 text-center">
+                                <p class="text-lg font-heading text-neutral-900">سلتك فارغة حالياً</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="border-t border-neutral-300 p-5 sm:p-6">
+                        <div class="mb-4 flex justify-between px-1">
+                            <span class="font-heading text-xl">الإجمالي:</span>
+                            <span class="font-heading text-xl text-neutral-900">{{ global_cart.get_total_price }} ل.س</span>
                         </div>
+                        
+                        <button onclick="sendWhatsApp()" class="btn btn-primary w-full">
+                            <span>طلب عبر واتساب</span>
+                        </button>
+                    </div>
                     </div>
                     <div class="border-t border-neutral-300 p-5 sm:p-6">
                         {% url 'base:checkout' as checkout_url %}
@@ -126,6 +150,21 @@
         </div>
         <script src="{% static 'ghandy/ghandy-ui.js' %}"></script>
     </div>
+
+    <script>
+        function sendWhatsApp() {
+            let orderDetails = "طلب جديد من متجر غاندي:\n\n";
+            
+            {% for key, value in cart_obj.cart.items %}
+                orderDetails += "📦 *{{ value.name }}*\n   الكمية: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
+            {% endfor %}
+            
+            orderDetails += "💰 *الإجمالي النهائي: {{ cart_obj.get_total_price }} ل.س*";
+            
+            let phoneNumber = "963937341881"; // رقمك هنا
+            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(orderDetails)}`, '_blank');
+        }
+        </script>
 </body>
 
 </html>

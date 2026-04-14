@@ -1,0 +1,63 @@
+{% extends 'base.html' %} {# تأكد أن اسم ملف التنسيق الأساسي عندك هو base.html #}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center"> سلة المشتريات</h2>
+    
+    {% if cart.cart %}
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>المنتج</th>
+                    <th>الكمية</th>
+                    <th>السعر الفردي</th>
+                    <th>الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in cart.cart.items %}
+                <tr>
+                    <td>{{ value.name }}</td>
+                    <td>{{ value.qty }}</td>
+                    <td>{{ value.price }} ل.س</td>
+                    <td>{% widthratio value.price 1 value.qty %} ل.س</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-end mt-3">
+        <h4> الإجمالي الكلي: <span class="text-success">{{ cart.get_total_price }} ل.س</span></h4>
+        <br>
+        <button onclick="sendWhatsApp()" class="btn btn-success btn-lg">
+             تأكيد الطلب وإرسال عبر واتساب
+        </button>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        سلتك فارغة حالياً. <a href="/">عد للتسوق من هنا</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function sendWhatsApp() {
+    let orderDetails = "مرحباً غاندي ستور، أريد طلب المنتجات التالية:\n\n";
+    
+    {% for key, value in cart.cart.items %}
+        orderDetails += " *{{ value.name }}*\n   العدد: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
+    {% endfor %}
+    
+    orderDetails += "--------------------------\n";
+    orderDetails += " *الإجمالي النهائي: {{ cart.get_total_price }} ل.س*";
+    
+    // استبدل الرقم التالي برقم جوالك الخاص مع رمز الدولة (بدون + أو 00)
+    let phoneNumber = "963937341881"; 
+    let whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(orderDetails)}`;
+    
+    window.open(whatsappUrl, '_blank');
+}
+</script>
+{% endblock %}
