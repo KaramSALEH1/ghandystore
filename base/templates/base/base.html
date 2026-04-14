@@ -95,31 +95,22 @@
         <div id="cartDrawerRoot" class="fixed inset-0 z-[60] hidden" aria-hidden="true">
             <div class="absolute inset-0 bg-black/20 backdrop-blur-[2px]" data-cart-close></div>
             <aside
-                class="absolute right-0 top-0 h-full w-full max-w-md border-l border-neutral-300 bg-neutral-100 shadow-2xl">
-                <div class="flex h-full flex-col">
-                    <div class="flex items-center justify-between border-b border-neutral-300 px-5 py-5 sm:px-6">
+                class="absolute right-0 top-0 z-10 flex h-full w-full max-w-md flex-col border-l border-neutral-300 bg-neutral-100 shadow-2xl">
+                <div class="flex h-full min-h-0 flex-col">
+                    <div class="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-300 px-5 py-5 sm:px-6">
                         <h2 class="text-2xl">Cart</h2>
-                        {% include 'base/partials/button.html' with text='Close' variant='btn-secondary'
-                        attrs='data-cart-close' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" aria-hidden="true">
-                            <path d="M18 6 6 18" />
-                            <path d="m6 6 12 12" />
-                        </svg>' %}
+                        {% include 'base/partials/button.html' with text='Close' variant='btn-secondary' attrs='data-cart-close' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' %}
                     </div>
-                    <div class="flex-1 space-y-4 overflow-auto p-5 sm:p-6">
+                    <div class="min-h-0 flex-1 space-y-4 overflow-auto p-5 sm:p-6">
                         <div class="card-soft p-5">
-                            <p class="text-lg font-heading text-neutral-900">A quiet cart - coming soon.</p>
+                            <p class="text-lg font-heading text-neutral-900">A quiet cart — coming soon.</p>
+                            <p class="mt-2 text-sm text-neutral-600">Your pieces will appear here once the bag is connected.</p>
                         </div>
                     </div>
-                    <div class="border-t border-neutral-300 p-5 sm:p-6">
+                    <div class="shrink-0 border-t border-neutral-300 p-5 sm:p-6">
                         {% url 'base:checkout' as checkout_url %}
-                        {% include 'base/partials/button.html' with text='Checkout' variant='btn-primary'
-                        classes='w-full' url=checkout_url icon='<svg viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path d="M5 12h14" />
-                            <path d="m13 6 6 6-6 6" />
-                        </svg>' %}
-                        <p class="mt-3 text-xs text-neutral-500">UI only - functionality unchanged.</p>
+                        {% include 'base/partials/button.html' with text='Checkout' variant='btn-primary' classes='w-full justify-center' url=checkout_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+                        <p class="mt-3 text-xs text-neutral-500">UI only — functionality unchanged.</p>
                     </div>
                 </div>
             </aside>

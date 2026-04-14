@@ -4,30 +4,102 @@
 
 {% block content %}
     {% url 'item:items' as item_items_url %}
-    <section class="panel p-4 sm:p-6 lg:p-7">
-        <div class="flex items-start justify-between gap-6">
-            <div>
-                <div class="label-micro">Checkout</div>
-                <h1 class="mt-2">Checkout</h1>
-                <p class="mt-4 max-w-xl">
-                    This page is a visual placeholder for now — checkout flow will be added later.
+    <section class="panel overflow-hidden p-4 sm:p-6 lg:p-7">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="max-w-xl">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="label-micro">Checkout</span>
+                    <span class="badge">Preview</span>
+                </div>
+                <h1 class="mt-3 text-3xl sm:text-4xl">Complete your order</h1>
+                <p class="mt-3 text-base leading-relaxed text-neutral-600 sm:mt-4">
+                    This page is a visual placeholder for now. When checkout goes live, you will confirm shipping and payment here.
                 </p>
             </div>
         </div>
 
-        <div class="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            <div class="lg:col-span-12 card-soft p-5 sm:p-6">
-                <div class="label-micro">Order summary</div>
-                <p class="mt-3 text-lg font-heading text-neutral-900">Your cart is currently UI-only.</p>
-                <p class="mt-2">
-                    You can continue browsing the collection.
-                </p>
-                <div class="mt-5 flex flex-wrap gap-2">
-                    {% include 'base/partials/button.html' with text='Back to shop' variant='btn-primary' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
-                    {% include 'base/partials/button.html' with text='Home' variant='btn-secondary' url='/' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>' %}
+        <div class="mt-8 grid grid-cols-1 gap-6 lg:mt-10 lg:grid-cols-12 lg:gap-8">
+            <div class="lg:col-span-7 space-y-5">
+                <div class="rounded-xl border border-neutral-300 bg-secondary-100/40 p-5 sm:p-6">
+                    <div class="label-micro">What happens next</div>
+                    <ol class="mt-5 space-y-4">
+                        <li class="flex gap-4">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/90 text-sm font-medium text-neutral-800 shadow-sm">1</span>
+                            <div class="min-w-0 pt-0.5">
+                                <p class="font-heading text-lg text-neutral-900">Review your bag</p>
+                                <p class="mt-1 text-sm leading-relaxed text-neutral-600">Pieces, quantities and notes will appear in your summary.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/90 text-sm font-medium text-neutral-800 shadow-sm">2</span>
+                            <div class="min-w-0 pt-0.5">
+                                <p class="font-heading text-lg text-neutral-900">Shipping &amp; contact</p>
+                                <p class="mt-1 text-sm leading-relaxed text-neutral-600">Delivery details and confirmations will be collected in this step.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-300 bg-white/90 text-sm font-medium text-neutral-800 shadow-sm">3</span>
+                            <div class="min-w-0 pt-0.5">
+                                <p class="font-heading text-lg text-neutral-900">Secure payment</p>
+                                <p class="mt-1 text-sm leading-relaxed text-neutral-600">You will finish with a calm, guided payment flow.</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="rounded-xl border border-dashed border-neutral-400/80 bg-white/50 p-5 sm:p-6">
+                    <p class="text-sm leading-relaxed text-neutral-600">
+                        Need something sooner? Browse the collection and reach out via Instagram or WhatsApp from the footer — we will wire direct requests into checkout later.
+                    </p>
                 </div>
             </div>
+
+            <aside class="lg:col-span-5">
+                <div class="card-soft p-5 sm:p-6 lg:sticky lg:top-28">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <div class="label-micro">Order summary</div>
+                            <h2 class="mt-2 text-xl sm:text-2xl">Your bag</h2>
+                        </div>
+                        <span class="rounded-full border border-neutral-300 bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600">0 items</span>
+                    </div>
+
+                    <div class="mt-6 flex flex-col items-center rounded-xl border border-neutral-300 bg-secondary-100/50 py-10 px-4 text-center">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-300 bg-white/90 text-neutral-500 shadow-sm" aria-hidden="true">
+                            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 6h15l-1.5 9h-12z"/>
+                                <path d="M6 6 5 3H2"/>
+                                <circle cx="9" cy="20" r="1"/>
+                                <circle cx="18" cy="20" r="1"/>
+                            </svg>
+                        </div>
+                        <p class="mt-4 font-heading text-lg text-neutral-900">Cart is UI-only for now</p>
+                        <p class="mt-2 max-w-xs text-sm leading-relaxed text-neutral-600">
+                            When the shop cart is connected, your pieces will show up here with line totals.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 space-y-3 border-t border-neutral-300 pt-6">
+                        <div class="flex items-center justify-between text-sm text-neutral-600">
+                            <span>Subtotal</span>
+                            <span class="font-medium tabular-nums text-neutral-500">—</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-neutral-600">
+                            <span>Shipping</span>
+                            <span class="text-neutral-500">Calculated later</span>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-neutral-300 pt-3 text-base font-heading text-neutral-900">
+                            <span>Total</span>
+                            <span class="tabular-nums text-neutral-500">—</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                        {% include 'base/partials/button.html' with text='Back to shop' variant='btn-primary' classes='w-full justify-center sm:w-auto sm:flex-1' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+                        {% include 'base/partials/button.html' with text='Home' variant='btn-secondary' classes='w-full justify-center sm:w-auto sm:flex-1' url='/' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/></svg>' %}
+                    </div>
+                </div>
+            </aside>
         </div>
     </section>
 {% endblock %}
-
