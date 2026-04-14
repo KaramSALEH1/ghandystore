@@ -117,6 +117,21 @@
         </div>
         <script src="{% static 'ghandy/ghandy-ui.js' %}"></script>
     </div>
+
+    <script>
+        function sendWhatsApp() {
+            let orderDetails = "طلب جديد من متجر غاندي:\n\n";
+            
+            {% for key, value in cart_obj.cart.items %}
+                orderDetails += "📦 *{{ value.name }}*\n   الكمية: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
+            {% endfor %}
+            
+            orderDetails += "💰 *الإجمالي النهائي: {{ cart_obj.get_total_price }} ل.س*";
+            
+            let phoneNumber = "963937341881"; // رقمك هنا
+            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(orderDetails)}`, '_blank');
+        }
+        </script>
 </body>
 
 </html>

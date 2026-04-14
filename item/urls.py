@@ -12,4 +12,6 @@ urlpatterns = [
     path('<int:pk>/edit/', views.edit, name='edit'),
     path('category/<int:pk>', views.category, name='category'),
     path('api/places/<int:city_id>/', views.get_places_by_city, name='get_places_by_city'),
+    path('add/<int:item_id>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/', views.cart_summary, name='cart_summary'),
 ]

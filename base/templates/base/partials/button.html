@@ -1,5 +1,5 @@
 {% if url %}
-    <a href="{{ url }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}">
+    <a href="{% url 'add_to_cart' product.id %}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}">
         {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
         <span class="flex flex-col leading-tight">
             <span>{{ text }}</span>

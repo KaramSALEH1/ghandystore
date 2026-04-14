@@ -57,6 +57,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'base.context_processors.cart',
             ],
         },
     },
@@ -74,9 +75,6 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
         'PORT': os.environ.get('MYSQL_PORT', '3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
     }
 }
 

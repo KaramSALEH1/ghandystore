@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
-
+from .models import Item
+from .cart import Cart
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -12,6 +13,18 @@ from urllib.parse import quote
 
 from .forms import NewItemForm, EditItemForm, ItemRequestForm
 from .models import Category, Item, City, Place, ItemColor
+
+def add_to_cart(request, item_id):
+    cart = Cart(request)
+    item = get_object_or_404(Item, id=item_id)
+    cart.add(item=item)
+    
+    # هذا السطر يعيد المستخدم لنفس الصفحة التي ضغط منها على الزر
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+def cart_summary(request):
+    cart = Cart(request)
+    return render(request, 'cart_summary.html', {'cart': cart})
 
 
 def _ns(value):
