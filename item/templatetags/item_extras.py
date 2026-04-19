@@ -196,3 +196,42 @@ def itemcolor_swatch_hex(color) -> str | None:
 @register.filter
 def itemcolor_has_swatch(color) -> bool:
     return _swatch_hex_for_color(color) is not None
+
+
+def _item_accent_hex(item) -> str:
+    item_hex = (getattr(item, "accent_hex", "") or "").strip()
+    if item_hex and _HEX_RE.fullmatch(item_hex):
+        return item_hex
+
+    colors = getattr(item, "colors", None)
+    if colors is not None:
+        first_color = colors.filter(is_sold_out=False).order_by("name").first()
+        if first_color:
+            color_hex = _swatch_hex_for_color(first_color)
+            if color_hex:
+                return color_hex
+
+    return "#C79D4C"
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    hex_color = hex_color.lstrip("#")
+    red = int(hex_color[0:2], 16)
+    green = int(hex_color[2:4], 16)
+    blue = int(hex_color[4:6], 16)
+    return f"rgba({red}, {green}, {blue}, {alpha})"
+
+
+@register.filter
+def item_accent_hex(item) -> str:
+    return _item_accent_hex(item)
+
+
+@register.filter
+def item_accent_surface(item) -> str:
+    return _hex_to_rgba(_item_accent_hex(item), 0.14)
+
+
+@register.filter
+def item_accent_border(item) -> str:
+    return _hex_to_rgba(_item_accent_hex(item), 0.28)

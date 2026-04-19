@@ -1,4 +1,4 @@
-from .models import Item
+from .models import Item, ItemColor
 
 # item/cart.py
 
@@ -10,34 +10,41 @@ class Cart:
             cart = self.session['session_cart'] = {}
         self.cart = cart
 
-    def add(self, item):
-        item_id = str(item.id)
-        if item_id not in self.cart:
-            image_url = item.image.url if getattr(item, 'image', None) else ''
-            self.cart[item_id] = {
+    def _make_line_id(self, item_id: int, color_id: int) -> str:
+        return f"{item_id}:{color_id}"
+
+    def add(self, item, color: ItemColor):
+        if not color:
+            return
+        line_id = self._make_line_id(item.id, color.id)
+        if line_id not in self.cart:
+            self.cart[line_id] = {
+                'item_id': str(item.id),
+                'color_id': str(color.id),
+                'color_name': color.name,
                 'price': str(item.price),
                 'qty': 1,
                 'name': item.name,
-                'image_url': image_url,
+                'image_url': getattr(item, 'image_url', '') or '',
             }
         else:
-            self.cart[item_id]['qty'] += 1
+            self.cart[line_id]['qty'] += 1
         self.session.modified = True
 
-    def update(self, item_id, qty):
-        item_id = str(item_id)
-        if item_id not in self.cart:
+    def update(self, line_id, qty):
+        line_id = str(line_id)
+        if line_id not in self.cart:
             return
         if qty <= 0:
-            self.remove(item_id)
+            self.remove(line_id)
             return
-        self.cart[item_id]['qty'] = qty
+        self.cart[line_id]['qty'] = qty
         self.session.modified = True
 
-    def remove(self, item_id):
-        item_id = str(item_id)
-        if item_id in self.cart:
-            del self.cart[item_id]
+    def remove(self, line_id):
+        line_id = str(line_id)
+        if line_id in self.cart:
+            del self.cart[line_id]
             self.session.modified = True
 
     def clear(self):
@@ -49,13 +56,43 @@ class Cart:
         return sum(item['qty'] for item in self.cart.values())
 
     def __iter__(self):
-        for item_id, data in self.cart.items():
-            price = float(data['price'])
-            qty = data['qty']
-            item = Item.objects.filter(pk=item_id).first()
+        for line_id, data in list(self.cart.items()):
+            qty = data.get('qty', 0) or 0
+            raw_price = data.get('price', '0') or '0'
+            try:
+                price = float(raw_price)
+            except (TypeError, ValueError):
+                price = 0.0
+
+            item_id = data.get('item_id')
+            color_id = data.get('color_id')
+
+            if not item_id:
+                if ':' in str(line_id):
+                    item_id = str(line_id).split(':', 1)[0]
+                    color_id = color_id or str(line_id).split(':', 1)[1]
+                else:
+                    item_id = str(line_id)
+
+                data['item_id'] = str(item_id)
+                if color_id:
+                    data['color_id'] = str(color_id)
+                self.session.modified = True
+
+            try:
+                item_pk = int(item_id)
+            except (TypeError, ValueError):
+                self.cart.pop(line_id, None)
+                self.session.modified = True
+                continue
+
+            item = Item.objects.filter(pk=item_pk).first()
+            color = None
+            if item and color_id:
+                color = ItemColor.objects.filter(pk=color_id, item=item).first()
             if item:
                 price = float(item.price)
-                image_url = item.image.url if getattr(item, 'image', None) else data.get('image_url', '')
+                image_url = getattr(item, 'image_url', '') or ''
                 name = item.name
                 is_sold = item.is_sold
             else:
@@ -63,8 +100,11 @@ class Cart:
                 name = data.get('name', '')
                 is_sold = False
             yield {
-                'id': item_id,
+                'id': item.id if item else item_pk,
+                'line_id': line_id,
                 'name': name,
+                'color_id': color.id if color else None,
+                'color_name': color.name if color else (data.get('color_name', '') or ''),
                 'price': price,
                 'qty': qty,
                 'line_total': price * qty,
@@ -74,8 +114,28 @@ class Cart:
 
     def get_total_price(self):
         total = 0.0
-        for item_id, data in self.cart.items():
-            item = Item.objects.filter(pk=item_id).first()
-            price = float(item.price) if item else float(data['price'])
-            total += price * data['qty']
+        for line_id, data in self.cart.items():
+            qty = data.get('qty', 0) or 0
+
+            item_id = data.get('item_id')
+            if not item_id:
+                if ':' in str(line_id):
+                    item_id = str(line_id).split(':', 1)[0]
+                else:
+                    item_id = str(line_id)
+
+            try:
+                item_pk = int(item_id)
+            except (TypeError, ValueError):
+                continue
+
+            item = Item.objects.filter(pk=item_pk).first()
+            raw_price = data.get('price', '0') or '0'
+            try:
+                fallback_price = float(raw_price)
+            except (TypeError, ValueError):
+                fallback_price = 0.0
+
+            unit_price = float(item.price) if item else fallback_price
+            total += unit_price * qty
         return total

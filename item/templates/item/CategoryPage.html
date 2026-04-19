@@ -6,15 +6,15 @@
 <section class="panel overflow-hidden p-4 sm:p-6 lg:p-7">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div class="lg:col-span-4">
-            <div class="label-micro">Category page</div>
+            <div class="label-micro font-arabic" dir="rtl">التصنيف</div>
             <h1 class="mt-2">{{ category.name|default:category }}</h1>
-            <p class="mt-3 max-w-sm">
-                A softer category story with large compositions, reduced noise and a boutique editorial rhythm.
+            <p class="mt-3 max-w-sm font-arabic" dir="rtl">
+                تصفّح منتجات هذا التصنيف واختر اللون المناسب من صفحة المنتج.
             </p>
             <div class="mt-6 flex flex-wrap gap-2">
-                <a href="{% url 'item:items' %}?category={{ category.id }}" class="btn btn-primary">Browse
-                    collection</a>
-                <a href="{% url 'item:items' %}" class="btn btn-secondary">All products</a>
+                <a href="{% url 'item:items' %}?category={{ category.id }}" class="btn btn-primary font-arabic"
+                    dir="rtl">تصفح المجموعة</a>
+                <a href="{% url 'item:items' %}" class="btn btn-secondary font-arabic" dir="rtl">كل المنتجات</a>
             </div>
         </div>
 
@@ -25,8 +25,6 @@
                     <a href="{% url 'item:detail' item.id %}" class="media-frame h-[190px] sm:h-[210px]">
                         {% if item.image_url %}
                         <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                        {% elif item.image %}
-                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
                         {% endif %}
                         <div
                             class="absolute inset-auto bottom-4 left-5 font-heading text-5xl leading-none text-neutral-900/80">
@@ -43,8 +41,6 @@
                         class="media-frame {% if forloop.first %}h-[260px]{% else %}h-[140px]{% endif %}">
                         {% if item.image_url %}
                         <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                        {% elif item.image %}
-                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
                         {% endif %}
                         {% if forloop.first %}
                         <div

@@ -8,8 +8,8 @@
                 </a>
 
                 <div class="hidden items-center gap-5 md:flex">
-                    <a class="nav-link" href="/">Home</a>
-                    <a class="nav-link" href="{% url 'item:items' %}">Shop</a>
+                    <a class="nav-link font-arabic" dir="rtl" href="/">الرئيسية</a>
+                    <a class="nav-link font-arabic" dir="rtl" href="{% url 'item:items' %}">المتجر</a>
                     {% for category in global_categories %}
                     <a class="nav-link" href="{% url 'item:items' %}?category={{ category.id }}">{{ category.name }}</a>
                     {% endfor %}
@@ -18,31 +18,54 @@
                 <div class="flex items-center gap-2">
                     <input type="checkbox" id="mobile-menu-toggle" class="hidden peer">
                     <label for="mobile-menu-toggle" class="md:hidden cursor-pointer p-2">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
+                        {% include 'base/partials/icon.html' with name='menu' classes='h-6 w-6' %}
                     </label>
                     {% url 'item:items' as item_items_url %}
-                    {% include 'base/partials/button.html' with text='Cart' subtext=global_cart|length
-                    variant='btn-secondary' classes='text-xs sm:text-sm' attrs='data-cart-open' %}
-                    {% include 'base/partials/button.html' with text='Shop now' variant='btn-primary' classes='text-xs
-                    sm:text-sm hidden sm:inline-flex' url=item_items_url %}
+                    {% url 'item:cart_summary' as cart_summary_url %}
+                    {% with nav_btn_classes='text-xs sm:text-sm' %}
+                    {% with text='السلة' %}
+                    {% with subtext=global_cart|length %}
+                    {% with variant='btn-secondary' %}
+                    {% with classes=nav_btn_classes|add:' font-arabic' url=cart_summary_url %}
+                    {% include 'base/partials/button.html' %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% with nav_shop_classes='text-xs sm:text-sm hidden sm:inline-flex' %}
+                    {% with text='تسوق الآن' %}
+                    {% with variant='btn-primary' %}
+                    {% with classes=nav_shop_classes|add:' font-arabic' %}
+                    {% with url=item_items_url icon_name='arrow-right' %}
+                    {% include 'base/partials/button.html' %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
                 </div>
             </nav>
 
             <!-- Mobile Menu -->
             <div class="hidden peer-checked:block md:hidden bg-white/95 backdrop-blur-sm border-t border-neutral-200">
                 <div class="px-4 py-4 space-y-3">
-                    <a class="block nav-link py-2" href="/">Home</a>
-                    <a class="block nav-link py-2" href="{% url 'item:items' %}">Shop</a>
+                    <a class="block nav-link py-2 font-arabic" dir="rtl" href="/">الرئيسية</a>
+                    <a class="block nav-link py-2 font-arabic" dir="rtl" href="{% url 'item:items' %}">المتجر</a>
                     {% for category in global_categories %}
                     <a class="block nav-link py-2" href="{% url 'item:items' %}?category={{ category.id }}">{{
                         category.name }}</a>
                     {% endfor %}
                     <div class="pt-2">
-                        {% include 'base/partials/button.html' with text='Shop now' variant='btn-primary'
-                        classes='w-full' url=item_items_url %}
+                        {% with text='تسوق الآن' %}
+                        {% with variant='btn-primary' %}
+                        {% with classes='w-full font-arabic' %}
+                        {% with url=item_items_url icon_name='arrow-right' %}
+                        {% include 'base/partials/button.html' %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
                     </div>
                 </div>
             </div>

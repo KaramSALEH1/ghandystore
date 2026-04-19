@@ -1,22 +1,22 @@
 {% extends 'base/base.html' %}
 
-{% block title %}Shop{% endblock %}
+{% block title %}المتجر{% endblock %}
 
 {% block content %}
 <section class="panel p-4 sm:p-5 lg:p-6">
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-            <div class="label-micro">Product listing</div>
-            <h1>Refined everyday pieces</h1>
+            <div class="label-micro font-arabic" dir="rtl">المنتجات</div>
+            <h1 class="font-arabic" dir="rtl">القطع المتوفرة</h1>
         </div>
-        <div class="text-sm text-neutral-600">
-            <span class="font-medium text-neutral-800">{{ items|length }}</span> products in catalog
+        <div class="text-sm text-neutral-600 font-arabic" dir="rtl">
+            <span class="font-medium text-neutral-800">{{ items|length }}</span> منتج في المتجر
         </div>
     </div>
 
     <form method="get" action="{% url 'item:items' %}" class="mt-5 space-y-4">
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{% url 'item:items' %}" class="badge">All</a>
+            <a href="{% url 'item:items' %}" class="badge font-arabic" dir="rtl">الكل</a>
             {% for category in categories %}
             <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
                 class="badge {% if category.id == category_id %}bg-secondary-100 border-neutral-500/40{% endif %}">
@@ -26,8 +26,8 @@
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3">
-            <input name="query" class="input flex-1" type="text" value="{{ query }}" placeholder="Search products">
-            <button class="btn btn-primary" type="submit">Search</button>
+            <input name="query" class="input flex-1 font-arabic" dir="rtl" type="text" value="{{ query }}" placeholder="ابحث عن منتج">
+            <button class="btn btn-primary font-arabic" dir="rtl" type="submit">بحث</button>
         </div>
     </form>
 </section>

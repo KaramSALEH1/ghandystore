@@ -26,6 +26,13 @@ class Item(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     price = models.FloatField()
+    accent_hex = models.CharField(
+        max_length=7,
+        blank=True,
+        default="",
+        validators=[validate_optional_hex],
+        help_text="Optional product accent color, e.g. #C79D4C",
+    )
     image = models.ImageField(upload_to='item_images', blank=True, null=True)
     is_sold = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, related_name='items', on_delete=models.CASCADE)
@@ -33,7 +40,14 @@ class Item(models.Model):
 
     @property
     def image_url(self):
-        return self.image.url if self.image else ''
+        if not self.image or not self.image.name:
+            return ''
+        try:
+            if self.image.storage.exists(self.image.name):
+                return self.image.url
+        except Exception:
+            return ''
+        return ''
 
     @property
     def is_out_of_stock(self):

@@ -1,7 +1,3 @@
-import json
-from pathlib import Path
-from types import SimpleNamespace
-from .models import Item
 from .cart import Cart
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -12,7 +8,19 @@ from django.http import JsonResponse
 from urllib.parse import quote
 
 from .forms import NewItemForm, EditItemForm, ItemRequestForm
-from .models import Category, Item, City, Place, ItemColor
+from .models import Category, Item, Place, ItemColor
+
+
+def _safe_image_url(file_field) -> str:
+    if not file_field or not getattr(file_field, 'name', ''):
+        return ''
+    try:
+        if file_field.storage.exists(file_field.name):
+            return file_field.url
+    except Exception:
+        return ''
+    return ''
+
 
 def add_to_cart(request, item_id):
     if request.method != 'POST':
@@ -21,14 +29,25 @@ def add_to_cart(request, item_id):
     cart = Cart(request)
     item = get_object_or_404(Item, id=item_id)
     if item.is_sold:
-        messages.error(request, 'This product is currently out of store and cannot be added to cart.')
+        messages.error(request, 'هذا المنتج غير متوفر حالياً ولا يمكن إضافته إلى السلة.')
         return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
-    cart.add(item=item)
+    color_id = request.POST.get('color_id')
+    if not color_id:
+        messages.error(request, 'يرجى اختيار اللون قبل إضافة المنتج إلى السلة.')
+        return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
+    color = ItemColor.objects.filter(pk=color_id, item=item, is_sold_out=False).first()
+    if not color:
+        messages.error(request, 'اللون المختار غير متوفر.')
+        return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
+    cart.add(item=item, color=color)
+    messages.success(request, 'تمت إضافة المنتج إلى السلة.')
     return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
 
-def update_cart_item(request, item_id):
+def update_cart_item(request, line_id):
     if request.method != 'POST':
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -39,16 +58,16 @@ def update_cart_item(request, item_id):
         qty_int = 1
 
     cart = Cart(request)
-    cart.update(item_id=item_id, qty=qty_int)
+    cart.update(line_id=line_id, qty=qty_int)
     return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
 
-def remove_from_cart(request, item_id):
+def remove_from_cart(request, line_id):
     if request.method != 'POST':
         return redirect(request.META.get('HTTP_REFERER', '/'))
 
     cart = Cart(request)
-    cart.remove(item_id=item_id)
+    cart.remove(line_id=line_id)
     return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
 
@@ -65,39 +84,7 @@ def cart_summary(request):
     return render(request, 'item/cart_summary.html', {'cart': cart})
 
 
-def _ns(value):
-    if isinstance(value, dict):
-        return SimpleNamespace(**{k: _ns(v) for k, v in value.items()})
-    if isinstance(value, list):
-        return [_ns(v) for v in value]
-    return value
-
-
-def _load_mock_json(filename: str):
-    base_dir: Path = getattr(settings, 'MOCK_DATA_DIR', Path(settings.BASE_DIR) / 'mock-data')
-    path = base_dir / filename
-    with path.open('r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-def _mock_catalog():
-    categories = _ns(_load_mock_json('categories.json'))
-    items = _ns(_load_mock_json('items.json'))
-    colors = _ns(_load_mock_json('item-colors.json'))
-    return categories, items, colors
-
-
 def category(request, pk ):
-    if getattr(settings, 'USE_MOCK_DATA', False):
-        categories, items, _colors = _mock_catalog()
-        category_obj = next((c for c in categories if int(c.id) == int(pk)), None)
-        page_items = [i for i in items if int(i.category_id) == int(pk) and not bool(getattr(i, 'is_sold', False))][0:9]
-        return render(request, 'item/CategoryPage.html', {
-            'items': page_items,
-            'category': category_obj or SimpleNamespace(id=pk, name='Category'),
-            'is_mock_data': True,
-        })
-
     category = Category.objects.get(pk=pk)
     items = Item.objects.filter(category=category)[0:9]
 
@@ -108,72 +95,6 @@ def category(request, pk ):
 
 
 def detail(request, pk):
-    if getattr(settings, 'USE_MOCK_DATA', False):
-        categories, items, colors = _mock_catalog()
-        item_obj = next((i for i in items if int(i.id) == int(pk)), None)
-        if not item_obj:
-            item_obj = SimpleNamespace(
-                id=pk,
-                name='Item',
-                price='0',
-                description='',
-                category_id=1,
-                image_url='https://picsum.photos/seed/ghandy-fallback/1200/900',
-            )
-
-        related_items = [i for i in items if int(i.category_id) == int(item_obj.category_id) and int(i.id) != int(pk) and not bool(getattr(i, 'is_sold', False))][0:3]
-
-        item_colors = [c for c in colors if int(c.item_id) == int(item_obj.id)]
-        item_colors = sorted(item_colors, key=lambda c: (c.name or '').lower())
-
-        selected_color_id = request.GET.get('color', None)
-        selected_color = next((c for c in item_colors if selected_color_id and str(c.id) == str(selected_color_id)), None)
-
-        all_images = []
-        selected_color_images = []
-        if selected_color and not bool(getattr(selected_color, 'is_sold_out', False)):
-            for img in getattr(selected_color, 'images', []) or []:
-                selected_color_images.append({
-                    'url': img.url,
-                    'type': 'color',
-                    'color': selected_color,
-                    'color_id': selected_color.id,
-                    'alt': getattr(img, 'alt', f"{item_obj.name} - {selected_color.name}"),
-                })
-
-        if getattr(item_obj, 'image_url', None) and (not selected_color or not selected_color_images):
-            all_images.append({
-                'url': item_obj.image_url,
-                'type': 'main',
-                'color': None,
-                'color_id': None,
-                'alt': f"{item_obj.name} - Main Image",
-            })
-
-        all_images.extend(selected_color_images)
-
-        for c in item_colors:
-            if bool(getattr(c, 'is_sold_out', False)) or c == selected_color:
-                continue
-            for img in getattr(c, 'images', []) or []:
-                all_images.append({
-                    'url': img.url,
-                    'type': 'color',
-                    'color': c,
-                    'color_id': c.id,
-                    'alt': getattr(img, 'alt', f"{item_obj.name} - {c.name}"),
-                })
-
-        return render(request, 'item/ProductDetailPage.html', {
-            'item': item_obj,
-            'related_items': related_items,
-            'colors': item_colors,
-            'selected_color': selected_color,
-            'all_images': all_images,
-            'show_form': False,
-            'is_mock_data': True,
-        })
-
     item = get_object_or_404(Item, pk=pk)
     related_items = Item.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:3]
     
@@ -193,22 +114,25 @@ def detail(request, pk):
     # If a color is selected, put that color's images first
     all_images = []
     selected_color_images = []
+    item_image_url = _safe_image_url(item.image)
     
     # If color is selected, collect its images first
     if selected_color and not selected_color.is_sold_out:
         for color_image in selected_color.images.all():
-            selected_color_images.append({
-                'url': color_image.image.url,
-                'type': 'color',
-                'color': selected_color,
-                'color_id': selected_color.id,
-                'alt': f"{item.name} - {selected_color.name}"
-            })
+            color_url = _safe_image_url(color_image.image)
+            if color_url:
+                selected_color_images.append({
+                    'url': color_url,
+                    'type': 'color',
+                    'color': selected_color,
+                    'color_id': selected_color.id,
+                    'alt': f"{item.name} - {selected_color.name}"
+                })
     
     # Add main item image (only if no color selected or color has no images)
-    if item.image and (not selected_color or not selected_color_images):
+    if item_image_url and (not selected_color or not selected_color_images):
         all_images.append({
-            'url': item.image.url,
+            'url': item_image_url,
             'type': 'main',
             'color': None,
             'color_id': None,
@@ -222,13 +146,15 @@ def detail(request, pk):
     for color in colors:
         if not color.is_sold_out and color != selected_color:
             for color_image in color.images.all():
-                all_images.append({
-                    'url': color_image.image.url,
-                    'type': 'color',
-                    'color': color,
-                    'color_id': color.id,
-                    'alt': f"{item.name} - {color.name}"
-                })
+                color_url = _safe_image_url(color_image.image)
+                if color_url:
+                    all_images.append({
+                        'url': color_url,
+                        'type': 'color',
+                        'color': color,
+                        'color_id': color.id,
+                        'alt': f"{item.name} - {color.name}"
+                    })
 
     form = ItemRequestForm(item=item)
     show_form = False
@@ -251,16 +177,18 @@ def detail(request, pk):
                     selected_color_images = []
                     if not selected_color.is_sold_out:
                         for color_image in selected_color.images.all():
-                            selected_color_images.append({
-                                'url': color_image.image.url,
-                                'type': 'color',
-                                'color': selected_color,
-                                'color_id': selected_color.id,
-                                'alt': f"{item.name} - {selected_color.name}"
-                            })
-                    if item.image and not selected_color_images:
+                            color_url = _safe_image_url(color_image.image)
+                            if color_url:
+                                selected_color_images.append({
+                                    'url': color_url,
+                                    'type': 'color',
+                                    'color': selected_color,
+                                    'color_id': selected_color.id,
+                                    'alt': f"{item.name} - {selected_color.name}"
+                                })
+                    if item_image_url and not selected_color_images:
                         all_images.append({
-                            'url': item.image.url,
+                            'url': item_image_url,
                             'type': 'main',
                             'color': None,
                             'color_id': None,
@@ -270,13 +198,15 @@ def detail(request, pk):
                     for color in colors:
                         if not color.is_sold_out and color != selected_color:
                             for color_image in color.images.all():
-                                all_images.append({
-                                    'url': color_image.image.url,
-                                    'type': 'color',
-                                    'color': color,
-                                    'color_id': color.id,
-                                    'alt': f"{item.name} - {color.name}"
-                                })
+                                color_url = _safe_image_url(color_image.image)
+                                if color_url:
+                                    all_images.append({
+                                        'url': color_url,
+                                        'type': 'color',
+                                        'color': color,
+                                        'color_id': color.id,
+                                        'alt': f"{item.name} - {color.name}"
+                                    })
             except (ValueError, TypeError):
                 pass
         if form.is_valid():
@@ -309,7 +239,8 @@ def detail(request, pk):
             
             # Encode message for URL
             encoded_message = quote(whatsapp_message)
-            whatsapp_url = f"https://wa.me/+963937341881?text={encoded_message}"
+            whatsapp_number = getattr(settings, 'WHATSAPP_ORDER_NUMBER', '963937341881')
+            whatsapp_url = f"https://wa.me/+{whatsapp_number}?text={encoded_message}"
             
             # Redirect to WhatsApp
             return redirect(whatsapp_url)
@@ -324,16 +255,18 @@ def detail(request, pk):
                 selected_color_images = []
                 if not selected_color.is_sold_out:
                     for color_image in selected_color.images.all():
-                        selected_color_images.append({
-                            'url': color_image.image.url,
-                            'type': 'color',
-                            'color': selected_color,
-                            'color_id': selected_color.id,
-                            'alt': f"{item.name} - {selected_color.name}"
-                        })
-                if item.image and not selected_color_images:
+                        color_url = _safe_image_url(color_image.image)
+                        if color_url:
+                            selected_color_images.append({
+                                'url': color_url,
+                                'type': 'color',
+                                'color': selected_color,
+                                'color_id': selected_color.id,
+                                'alt': f"{item.name} - {selected_color.name}"
+                            })
+                if item_image_url and not selected_color_images:
                     all_images.append({
-                        'url': item.image.url,
+                        'url': item_image_url,
                         'type': 'main',
                         'color': None,
                         'color_id': None,
@@ -343,13 +276,15 @@ def detail(request, pk):
                 for color in colors:
                     if not color.is_sold_out and color != selected_color:
                         for color_image in color.images.all():
-                            all_images.append({
-                                'url': color_image.image.url,
-                                'type': 'color',
-                                'color': color,
-                                'color_id': color.id,
-                                'alt': f"{item.name} - {color.name}"
-                            })
+                            color_url = _safe_image_url(color_image.image)
+                            if color_url:
+                                all_images.append({
+                                    'url': color_url,
+                                    'type': 'color',
+                                    'color': color,
+                                    'color_id': color.id,
+                                    'alt': f"{item.name} - {color.name}"
+                                })
 
     return render(request, 'item/ProductDetailPage.html', {
         'item': item,
@@ -364,27 +299,6 @@ def detail(request, pk):
 def items(request):
     query = request.GET.get('query', '')
     category_id = request.GET.get('category', 0)
-    if getattr(settings, 'USE_MOCK_DATA', False):
-        categories, items, _colors = _mock_catalog()
-        filtered_items = [i for i in items if not bool(getattr(i, 'is_sold', False))]
-
-        if category_id:
-            filtered_items = [i for i in filtered_items if int(i.category_id) == int(category_id)]
-
-        if query:
-            q = query.lower().strip()
-            filtered_items = [
-                i for i in filtered_items
-                if q in (getattr(i, 'name', '') or '').lower() or q in (getattr(i, 'description', '') or '').lower()
-            ]
-
-        return render(request, 'item/ProductListingPage.html', {
-            'items': filtered_items,
-            'query': query,
-            'categories': categories,
-            'category_id': int(category_id) if category_id else 0,
-            'is_mock_data': True,
-        })
 
     categories = Category.objects.all()
     items = Item.objects.all()
@@ -419,7 +333,7 @@ def new(request):
 
     return render(request, 'item/form.html', {
         'form': form,
-        'title': 'New item',
+        'title': 'منتج جديد',
     })
 
 @login_required
@@ -438,7 +352,7 @@ def edit(request, pk):
 
     return render(request, 'item/form.html', {
         'form': form,
-        'title': 'Edit item',
+        'title': 'تعديل المنتج',
     })
 
 @login_required

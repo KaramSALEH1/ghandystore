@@ -2,12 +2,13 @@ from django import forms
 
 from .models import Item, ItemRequest, City, Place, ItemColor
 
-INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
+INPUT_CLASSES = 'input'
+TEXTAREA_CLASSES = 'input min-h-28'
 
 class NewItemForm(forms.ModelForm):
     class Meta:
         model = Item
-        fields = ('category', 'name', 'description', 'price', 'image',)
+        fields = ('category', 'name', 'description', 'price', 'accent_hex', 'image',)
         widgets = {
             'category': forms.Select(attrs={
                 'class': INPUT_CLASSES
@@ -16,10 +17,14 @@ class NewItemForm(forms.ModelForm):
                 'class': INPUT_CLASSES
             }),
             'description': forms.Textarea(attrs={
-                'class': INPUT_CLASSES
+                'class': TEXTAREA_CLASSES
             }),
             'price': forms.TextInput(attrs={
                 'class': INPUT_CLASSES
+            }),
+            'accent_hex': forms.TextInput(attrs={
+                'class': INPUT_CLASSES,
+                'placeholder': '#C79D4C'
             }),
             'image': forms.FileInput(attrs={
                 'class': INPUT_CLASSES
@@ -29,16 +34,20 @@ class NewItemForm(forms.ModelForm):
 class EditItemForm(forms.ModelForm):
     class Meta:
         model = Item
-        fields = ('name', 'description', 'price', 'image', 'is_sold')
+        fields = ('name', 'description', 'price', 'accent_hex', 'image', 'is_sold')
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': INPUT_CLASSES
             }),
             'description': forms.Textarea(attrs={
-                'class': INPUT_CLASSES
+                'class': TEXTAREA_CLASSES
             }),
             'price': forms.TextInput(attrs={
                 'class': INPUT_CLASSES
+            }),
+            'accent_hex': forms.TextInput(attrs={
+                'class': INPUT_CLASSES,
+                'placeholder': '#C79D4C'
             }),
             'image': forms.FileInput(attrs={
                 'class': INPUT_CLASSES
@@ -94,7 +103,7 @@ class ItemRequestForm(forms.ModelForm):
                 self.fields['color'].required = True
             else:
                 self.fields['color'].required = False
-                self.fields['color'].widget.attrs['style'] = 'display:none;'
+                self.fields['color'].widget.attrs['class'] = 'hidden'
         else:
             self.fields['color'].queryset = ItemColor.objects.none()
             self.fields['color'].required = False

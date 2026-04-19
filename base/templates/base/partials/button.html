@@ -1,18 +1,26 @@
 {% if url %}
 <a href="{{ url }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}">
-    {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
+    {% if icon_name %}
+    {% include 'base/partials/icon.html' with name=icon_name classes='h-5 w-5' %}
+    {% endif %}
     <span class="flex flex-col leading-tight">
         <span>{{ text }}</span>
-        {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
+        {% if subtext %}
+        <span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>
+        {% endif %}
     </span>
 </a>
 {% else %}
-<button type="{{ type|default:'button' }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}" {%
-    if attrs %}{{ attrs|safe }}{% endif %}>
-    {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
+<button type="{{ type|default:'button' }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}" {{
+    attrs|default:''|safe }}>
+    {% if icon_name %}
+    {% include 'base/partials/icon.html' with name=icon_name classes='h-5 w-5' %}
+    {% endif %}
     <span class="flex flex-col leading-tight">
         <span>{{ text }}</span>
-        {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
+        {% if subtext %}
+        <span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>
+        {% endif %}
     </span>
 </button>
 {% endif %}

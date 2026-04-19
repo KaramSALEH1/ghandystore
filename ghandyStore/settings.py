@@ -99,19 +99,11 @@ else:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Optional UI preview mode: load catalog data from JSON files instead of DB.
-# Enable by setting USE_MOCK_DATA=1 in your environment.
-USE_MOCK_DATA = 0
-MOCK_DATA_DIR = BASE_DIR / 'mock-data'
-
-if USE_MOCK_DATA:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'mock-data.sqlite3',
-        }
-    }
+WHATSAPP_ORDER_NUMBER = os.environ.get('WHATSAPP_ORDER_NUMBER', '963937341881')
+INSTAGRAM_URL = os.environ.get(
+    'INSTAGRAM_URL',
+    'https://www.instagram.com/_.ghandy._?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==',
+)
 
 # SSL/Security settings - only enabled in production
 if not DEBUG:
