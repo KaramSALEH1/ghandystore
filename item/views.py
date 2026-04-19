@@ -15,16 +15,54 @@ from .forms import NewItemForm, EditItemForm, ItemRequestForm
 from .models import Category, Item, City, Place, ItemColor
 
 def add_to_cart(request, item_id):
+    if request.method != 'POST':
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
     cart = Cart(request)
     item = get_object_or_404(Item, id=item_id)
+    if item.is_sold:
+        messages.error(request, 'This product is currently out of store and cannot be added to cart.')
+        return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
     cart.add(item=item)
-    
-    # هذا السطر يعيد المستخدم لنفس الصفحة التي ضغط منها على الزر
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+    return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
+
+def update_cart_item(request, item_id):
+    if request.method != 'POST':
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    qty = request.POST.get('qty', '1')
+    try:
+        qty_int = int(qty)
+    except (TypeError, ValueError):
+        qty_int = 1
+
+    cart = Cart(request)
+    cart.update(item_id=item_id, qty=qty_int)
+    return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
+
+def remove_from_cart(request, item_id):
+    if request.method != 'POST':
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    cart = Cart(request)
+    cart.remove(item_id=item_id)
+    return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+
+
+def clear_cart(request):
+    if request.method != 'POST':
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    cart = Cart(request)
+    cart.clear()
+    return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
 def cart_summary(request):
     cart = Cart(request)
-    return render(request, 'cart_summary.html', {'cart': cart})
+    return render(request, 'item/cart_summary.html', {'cart': cart})
 
 
 def _ns(value):
@@ -61,7 +99,7 @@ def category(request, pk ):
         })
 
     category = Category.objects.get(pk=pk)
-    items = Item.objects.filter(category=category , is_sold=False)[0:9]
+    items = Item.objects.filter(category=category)[0:9]
 
     return render(request, 'item/CategoryPage.html', {
         'items': items,
@@ -349,7 +387,7 @@ def items(request):
         })
 
     categories = Category.objects.all()
-    items = Item.objects.filter(is_sold=False)
+    items = Item.objects.all()
 
     if category_id:
         items = items.filter(category_id=category_id)

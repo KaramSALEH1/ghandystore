@@ -1,63 +1,48 @@
-{% extends 'base.html' %} {# تأكد أن اسم ملف التنسيق الأساسي عندك هو base.html #}
+{% extends 'base/base.html' %}
+
+{% block title %}Cart{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-center"> سلة المشتريات</h2>
-    
-    {% if cart.cart %}
-    <div class="table-responsive">
-        <table class="table table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>المنتج</th>
-                    <th>الكمية</th>
-                    <th>السعر الفردي</th>
-                    <th>الإجمالي</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for key, value in cart.cart.items %}
-                <tr>
-                    <td>{{ value.name }}</td>
-                    <td>{{ value.qty }}</td>
-                    <td>{{ value.price }} ل.س</td>
-                    <td>{% widthratio value.price 1 value.qty %} ل.س</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<section class="panel p-4 sm:p-6 lg:p-7">
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <div class="label-micro">Cart page</div>
+            <h1>Your cart</h1>
+        </div>
+        <span class="badge">{{ cart|length }} items</span>
     </div>
 
-    <div class="text-end mt-3">
-        <h4> الإجمالي الكلي: <span class="text-success">{{ cart.get_total_price }} ل.س</span></h4>
-        <br>
-        <button onclick="sendWhatsApp()" class="btn btn-success btn-lg">
-             تأكيد الطلب وإرسال عبر واتساب
-        </button>
+    {% if cart|length %}
+    <div class="mt-6 space-y-3">
+        {% for cart_item in cart %}
+        <div class="card-soft p-4">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'item:detail' cart_item.id %}"
+                    class="h-16 w-16 overflow-hidden rounded-lg bg-secondary-100/50">
+                    {% if cart_item.image_url %}
+                    <img src="{{ cart_item.image_url }}" alt="{{ cart_item.name }}" class="h-full w-full object-cover">
+                    {% else %}
+                    <div class="flex h-full w-full items-center justify-center text-xs text-neutral-500">No image</div>
+                    {% endif %}
+                </a>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-medium text-neutral-900">{{ cart_item.name }}</p>
+                        {% if cart_item.is_sold %}
+                        <span class="badge bg-red-100 text-red-700 border-red-200">Out of store</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-neutral-600">SYP {{ cart_item.price|floatformat:2 }} each</p>
+                    <p class="text-sm text-neutral-900">SYP {{ cart_item.line_total|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info text-center">
-        سلتك فارغة حالياً. <a href="/">عد للتسوق من هنا</a>
+    <div class="mt-6 card-soft p-5">
+        <p class="text-neutral-700">Your cart is currently empty.</p>
     </div>
     {% endif %}
-</div>
-
-<script>
-function sendWhatsApp() {
-    let orderDetails = "مرحباً غاندي ستور، أريد طلب المنتجات التالية:\n\n";
-    
-    {% for key, value in cart.cart.items %}
-        orderDetails += " *{{ value.name }}*\n   العدد: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
-    {% endfor %}
-    
-    orderDetails += "--------------------------\n";
-    orderDetails += " *الإجمالي النهائي: {{ cart.get_total_price }} ل.س*";
-    
-    // استبدل الرقم التالي برقم جوالك الخاص مع رمز الدولة (بدون + أو 00)
-    let phoneNumber = "963937341881"; 
-    let whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(orderDetails)}`;
-    
-    window.open(whatsappUrl, '_blank');
-}
-</script>
+</section>
 {% endblock %}

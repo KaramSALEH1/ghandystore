@@ -25,6 +25,16 @@
         {% include 'base/partials/navbar.html' %}
         <main class="pt-24 sm:pt-28">
             <div class="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-8">
+                {% if messages %}
+                <div class="mb-6 space-y-3">
+                    {% for message in messages %}
+                    <div
+                        class="rounded-2xl border border-neutral-300 bg-white/95 px-4 py-3 text-sm text-neutral-900 shadow-sm">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -97,20 +107,97 @@
             <aside
                 class="absolute right-0 top-0 z-10 flex h-full w-full max-w-md flex-col border-l border-neutral-300 bg-neutral-100 shadow-2xl">
                 <div class="flex h-full min-h-0 flex-col">
-                    <div class="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-300 px-5 py-5 sm:px-6">
+                    <div
+                        class="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-300 px-5 py-5 sm:px-6">
                         <h2 class="text-2xl">Cart</h2>
-                        {% include 'base/partials/button.html' with text='Close' variant='btn-secondary' attrs='data-cart-close' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' %}
+                        {% include 'base/partials/button.html' with text='Close' variant='btn-secondary'
+                        attrs='data-cart-close' icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full"
+                            aria-hidden="true">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>' %}
                     </div>
                     <div class="min-h-0 flex-1 space-y-4 overflow-auto p-5 sm:p-6">
-                        <div class="card-soft p-5">
-                            <p class="text-lg font-heading text-neutral-900">A quiet cart — coming soon.</p>
-                            <p class="mt-2 text-sm text-neutral-600">Your pieces will appear here once the bag is connected.</p>
+                        {% if global_cart|length %}
+                        {% for cart_item in global_cart %}
+                        <div class="card-soft p-4">
+                            <div class="flex gap-3">
+                                <a href="{% url 'item:detail' cart_item.id %}"
+                                    class="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary-100/50">
+                                    {% if cart_item.image_url %}
+                                    <img src="{{ cart_item.image_url }}" alt="{{ cart_item.name }}"
+                                        class="h-full w-full object-cover">
+                                    {% else %}
+                                    <div
+                                        class="flex h-full w-full items-center justify-center text-xs text-neutral-500">
+                                        No image</div>
+                                    {% endif %}
+                                </a>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{% url 'item:detail' cart_item.id %}"
+                                            class="font-heading text-lg text-neutral-900">{{ cart_item.name }}</a>
+                                        {% if cart_item.is_sold %}
+                                        <span class="badge bg-red-100 text-red-700 border-red-200">Out of store</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mt-1 text-sm text-neutral-600">SYP {{ cart_item.price|floatformat:2 }}
+                                        each
+                                    </p>
+                                    <p class="mt-1 text-sm text-neutral-900">Line total: SYP {{
+                                        cart_item.line_total|floatformat:2 }}</p>
+                                    <div class="mt-3 flex items-center gap-2">
+                                        <form method="post" action="{% url 'item:update_cart_item' cart_item.id %}"
+                                            class="flex items-center gap-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                            <input type="number" name="qty" min="1" value="{{ cart_item.qty }}"
+                                                class="input w-20 !py-2 !px-3 text-sm">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+                                        </form>
+                                        <form method="post" action="{% url 'item:remove_from_cart' cart_item.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Remove</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="card-soft p-5">
+                            <p class="text-lg font-heading text-neutral-900">Your cart is empty.</p>
+                            <p class="mt-2 text-sm text-neutral-600">Add a piece from any product page and it will
+                                appear here instantly.</p>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="shrink-0 border-t border-neutral-300 p-5 sm:p-6">
+                        {% if global_cart|length %}
+                        <div class="mb-4 flex items-center justify-between text-sm">
+                            <span class="text-neutral-600">Items</span>
+                            <span class="font-medium text-neutral-900">{{ global_cart|length }}</span>
+                        </div>
+                        <div class="mb-4 flex items-center justify-between text-base font-heading">
+                            <span>Total</span>
+                            <span>SYP {{ global_cart.get_total_price|floatformat:2 }}</span>
+                        </div>
+                        <form method="post" action="{% url 'item:clear_cart' %}" class="mb-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="btn btn-secondary w-full justify-center">Clear cart</button>
+                        </form>
+                        {% endif %}
                         {% url 'base:checkout' as checkout_url %}
-                        {% include 'base/partials/button.html' with text='Checkout' variant='btn-primary' classes='w-full justify-center' url=checkout_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
-                        <p class="mt-3 text-xs text-neutral-500">UI only — functionality unchanged.</p>
+                        {% include 'base/partials/button.html' with text='Checkout' variant='btn-primary'
+                        classes='w-full justify-center' url=checkout_url icon='<svg viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="h-full w-full" aria-hidden="true">
+                            <path d="M5 12h14" />
+                            <path d="m13 6 6 6-6 6" />
+                        </svg>' %}
                     </div>
                 </div>
             </aside>
@@ -121,17 +208,17 @@
     <script>
         function sendWhatsApp() {
             let orderDetails = "طلب جديد من متجر غاندي:\n\n";
-            
-            {% for key, value in cart_obj.cart.items %}
-                orderDetails += "📦 *{{ value.name }}*\n   الكمية: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
+
+            {% for key, value in global_cart.cart.items %}
+            orderDetails += "📦 *{{ value.name }}*\n   الكمية: {{ value.qty }}\n   السعر: {{ value.price }} ل.س\n\n";
             {% endfor %}
-            
-            orderDetails += "💰 *الإجمالي النهائي: {{ cart_obj.get_total_price }} ل.س*";
-            
+
+            orderDetails += "💰 *الإجمالي النهائي: {{ global_cart.get_total_price }} ل.س*";
+
             let phoneNumber = "963937341881"; // رقمك هنا
             window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(orderDetails)}`, '_blank');
         }
-        </script>
+    </script>
 </body>
 
 </html>

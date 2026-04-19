@@ -1,17 +1,18 @@
 {% if url %}
-    <a href="{% url 'add_to_cart' product.id %}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}">
-        {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
-        <span class="flex flex-col leading-tight">
-            <span>{{ text }}</span>
-            {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
-        </span>
-    </a>
+<a href="{{ url }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}">
+    {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
+    <span class="flex flex-col leading-tight">
+        <span>{{ text }}</span>
+        {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
+    </span>
+</a>
 {% else %}
-    <button type="{{ type|default:'button' }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}" {% if attrs %}{{ attrs|safe }}{% endif %}>
-        {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
-        <span class="flex flex-col leading-tight">
-            <span>{{ text }}</span>
-            {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
-        </span>
-    </button>
+<button type="{{ type|default:'button' }}" class="btn {{ variant|default:'btn-primary' }} {{ classes|default:'' }}" {%
+    if attrs %}{{ attrs|safe }}{% endif %}>
+    {% if icon %}<span class="icon">{{ icon|safe }}</span>{% endif %}
+    <span class="flex flex-col leading-tight">
+        <span>{{ text }}</span>
+        {% if subtext %}<span class="text-[10px] uppercase tracking-wide opacity-70">{{ subtext }}</span>{% endif %}
+    </span>
+</button>
 {% endif %}

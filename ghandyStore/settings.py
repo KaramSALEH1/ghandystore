@@ -70,7 +70,7 @@ WSGI_APPLICATION = 'ghandyStore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ghandystore',
+        'NAME': 'ghandystore1',
         'USER': 'root',
         'PASSWORD': '',
         'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
@@ -102,7 +102,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Optional UI preview mode: load catalog data from JSON files instead of DB.
 # Enable by setting USE_MOCK_DATA=1 in your environment.
-USE_MOCK_DATA = os.environ.get('USE_MOCK_DATA', '0') in ('1', 'true', 'True', 'yes', 'YES')
+USE_MOCK_DATA = 0
 MOCK_DATA_DIR = BASE_DIR / 'mock-data'
 
 if USE_MOCK_DATA:

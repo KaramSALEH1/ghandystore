@@ -10,7 +10,13 @@
             <div>
                 <div class="label-micro">Handmade textile pieces</div>
                 <h1 class="mt-4 text-6xl leading-[0.9] sm:text-7xl">ghandy</h1>
-                {% include 'base/partials/button.html' with text='Shop collection' variant='btn-primary' classes='mt-6 w-fit' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+                {% include 'base/partials/button.html' with text='Shop collection' variant='btn-primary' classes='mt-6
+                w-fit' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full"
+                    aria-hidden="true">
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                </svg>' %}
             </div>
             <div class="pt-8">
                 <div class="label-micro">Narrative / textile / modern heirloom</div>
@@ -19,10 +25,10 @@
         <div class="relative lg:col-span-7">
             <div class="media-frame h-[185px] sm:h-[205px]">
                 {% with side_item=items.1 %}
-                {% if side_item.image %}
-                <img src="{{ side_item.image.url }}" alt="{{ side_item.name }}">
-                {% else %}
+                {% if side_item and side_item.image_url %}
                 <img src="{{ side_item.image_url }}" alt="{{ side_item.name }}">
+                {% elif side_item and side_item.image %}
+                <img src="{{ side_item.image.url }}" alt="{{ side_item.name }}">
                 {% endif %}
                 {% endwith %}
             </div>
@@ -35,7 +41,12 @@
         <div>
             <h2>Featured Collections</h2>
         </div>
-        {% include 'base/partials/button.html' with text='See all' variant='btn-secondary btn-sm' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>' %}
+        {% include 'base/partials/button.html' with text='See all' variant='btn-secondary btn-sm' url=item_items_url
+        icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" class="h-full w-full" aria-hidden="true">
+            <path d="M5 12h14" />
+            <path d="m13 6 6 6-6 6" />
+        </svg>' %}
     </div>
 
     <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -52,10 +63,10 @@
             <div class="mt-5 grid grid-cols-2 gap-3">
                 {% for item in items|slice:"3:7" %}
                 <div class="media-frame {% if forloop.first %}row-span-2 h-[260px]{% else %}h-[124px]{% endif %}">
-                    {% if item.image %}
-                    <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                    {% else %}
+                    {% if item.image_url %}
                     <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                    {% elif item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.name }}">
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -72,7 +83,14 @@
                 <p class="mt-4">
                     Each piece is intended to feel quiet, tactile and gallery-like rather than loud or conventional.
                 </p>
-                {% include 'base/partials/button.html' with text='Read more' variant='btn-secondary btn-sm' classes='mt-6' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>' %}
+                {% include 'base/partials/button.html' with text='Read more' variant='btn-secondary btn-sm'
+                classes='mt-6' url=item_items_url icon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-full w-full"
+                    aria-hidden="true">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                </svg>' %}
+                </svg>' %}
             </div>
         </div>
     </div>
