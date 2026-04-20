@@ -15,11 +15,9 @@ def _safe_image_url(file_field) -> str:
     if not file_field or not getattr(file_field, 'name', ''):
         return ''
     try:
-        if file_field.storage.exists(file_field.name):
-            return file_field.url
+        return file_field.url
     except Exception:
         return ''
-    return ''
 
 
 def add_to_cart(request, item_id):

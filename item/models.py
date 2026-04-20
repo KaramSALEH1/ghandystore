@@ -43,11 +43,9 @@ class Item(models.Model):
         if not self.image or not self.image.name:
             return ''
         try:
-            if self.image.storage.exists(self.image.name):
-                return self.image.url
+            return self.image.url
         except Exception:
             return ''
-        return ''
 
     @property
     def is_out_of_stock(self):
