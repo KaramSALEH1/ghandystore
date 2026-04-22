@@ -7,29 +7,54 @@
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
             <div class="label-micro font-arabic" dir="rtl">المنتجات</div>
-            <h1 class="font-arabic" dir="rtl">القطع المتوفرة</h1>
+            <h1 class="font-arabic" dir="rtl">القطع</h1>
         </div>
         <div class="text-sm text-neutral-600 font-arabic" dir="rtl">
             <span class="font-medium text-neutral-800">{{ items|length }}</span> منتج في المتجر
         </div>
     </div>
 
-    <form method="get" action="{% url 'item:items' %}" class="mt-5 space-y-4">
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{% url 'item:items' %}" class="badge font-arabic" dir="rtl">الكل</a>
-            {% for category in categories %}
-            <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
-                class="badge {% if category.id == category_id %}bg-secondary-100 border-neutral-500/40{% endif %}">
-                {{ category.name }}
-            </a>
-            {% endfor %}
-        </div>
+    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-5">
+        <aside class="hidden md:block md:col-span-3">
+            <div class="card-soft p-4">
+                <div class="label-micro font-arabic" dir="rtl">التصنيفات</div>
+                <div class="mt-4 max-h-72 space-y-2 overflow-auto pr-1">
+                    <a href="{% url 'item:items' %}?query={{ query }}"
+                        class="badge block w-full text-center font-arabic {% if not category_id %}bg-secondary-100 border-neutral-500/40{% endif %}"
+                        dir="rtl">الكل</a>
+                    {% for category in categories %}
+                    <a href="{% url 'item:items' %}?query={{ query }}&category={{ category.id }}"
+                        class="badge block w-full text-center {% if category.id == category_id %}bg-secondary-100 border-neutral-500/40{% endif %}">
+                        {{ category.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
 
-        <div class="flex flex-col sm:flex-row gap-3">
-            <input name="query" class="input flex-1 font-arabic" dir="rtl" type="text" value="{{ query }}" placeholder="ابحث عن منتج">
-            <button class="btn btn-primary font-arabic" dir="rtl" type="submit">بحث</button>
+        <div class="md:col-span-9">
+            <form method="get" action="{% url 'item:items' %}" class="space-y-4">
+                <div class="md:hidden">
+                    <label class="label-micro font-arabic" dir="rtl" for="mobileCategorySelect">التصنيف</label>
+                    <select id="mobileCategorySelect" name="category" class="input mt-2 font-arabic" dir="rtl"
+                        onchange="this.form.submit()">
+                        <option value="0" {% if not category_id %}selected{% endif %}>الكل</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category.id == category_id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input name="query" class="input flex-1 font-arabic" dir="rtl" type="text" value="{{ query }}"
+                        placeholder="ابحث عن منتج">
+                    <button class="btn btn-primary font-arabic" dir="rtl" type="submit">بحث</button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </section>
 
 <section class="panel mt-6 p-4 sm:p-5 lg:p-6">

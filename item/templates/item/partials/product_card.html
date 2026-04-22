@@ -19,9 +19,16 @@
             <h3 class="text-lg sm:text-xl">{{ product.name }}</h3>
             <p class="mt-1 text-sm text-neutral-600 font-arabic" dir="rtl">{{ product.price|floatformat:2 }} ل.س</p>
         </a>
-        <a href="{% url 'item:detail' product.id %}"
-            class="btn btn-secondary btn-sm w-full justify-center font-arabic mt-3" dir="rtl">
+        {% if product.is_sold or product.is_out_of_stock %}
+        <span class="btn btn-secondary btn-sm w-full justify-center font-arabic mt-3 opacity-55 cursor-not-allowed"
+            dir="rtl">
+            غير متوفر
+        </span>
+        {% else %}
+        <a href="{% url 'item:detail' product.id %}" class="btn btn-secondary btn-sm w-full justify-center font-arabic mt-3"
+            dir="rtl">
             اختر اللون
         </a>
+        {% endif %}
     </div>
 </div>

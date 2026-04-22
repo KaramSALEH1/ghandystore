@@ -154,9 +154,11 @@
                                             {% csrf_token %}
                                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                             <input type="number" name="qty" min="1" value="{{ cart_item.qty }}"
-                                                class="input w-20 !py-2 !px-3 text-sm">
-                                            <button type="submit" class="btn btn-secondary btn-sm font-arabic"
-                                                dir="rtl">تحديث</button>
+                                                class="input w-20 !py-2 !px-3 text-sm"
+                                                {% if cart_item.is_sold %}disabled{% endif %}>
+                                            <button type="submit"
+                                                class="btn btn-secondary btn-sm font-arabic {% if cart_item.is_sold %}opacity-50 cursor-not-allowed{% endif %}"
+                                                dir="rtl" {% if cart_item.is_sold %}disabled{% endif %}>تحديث</button>
                                         </form>
                                         <form method="post"
                                             action="{% url 'item:remove_from_cart' cart_item.line_id %}">
@@ -166,6 +168,12 @@
                                                 dir="rtl">حذف</button>
                                         </form>
                                     </div>
+                                    {% if cart_item.is_sold %}
+                                    <div class="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 font-arabic"
+                                        dir="rtl">
+                                        هذا المنتج غير متوفر حالياً. احذفه من السلة لإتمام الطلب.
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
+from item.cart import Cart
 from item.models import Category, Item
 from .forms import SignupForm
 
 def index(request):
-    items = Item.objects.filter(is_sold=False)[0:9]
+    items = Item.objects.all().order_by('-created_at')[0:9]
     categories = Category.objects.all()
 
     return render(request, 'base/index.html', {
@@ -29,7 +30,10 @@ def signup(request):
 
 
 def checkout(request):
+    cart = Cart(request)
+    cart_has_sold = any(getattr(line, 'is_sold', False) for line in cart)
     return render(request, 'base/checkout.html', {
         'whatsapp_order_number': getattr(settings, 'WHATSAPP_ORDER_NUMBER', '963937341881'),
+        'cart_has_sold': cart_has_sold,
     })
 

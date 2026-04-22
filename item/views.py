@@ -94,7 +94,7 @@ def category(request, pk ):
 
 def detail(request, pk):
     item = get_object_or_404(Item, pk=pk)
-    related_items = Item.objects.filter(category=item.category, is_sold=False).exclude(pk=pk)[0:3]
+    related_items = Item.objects.filter(category=item.category).exclude(pk=pk)[0:3]
     
     # Get all colors for this item with their images
     colors = ItemColor.objects.filter(item=item).prefetch_related('images').order_by('name')

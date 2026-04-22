@@ -45,6 +45,24 @@
                 </ol>
             </div>
 
+            {% if global_cart|length %}
+            <div class="rounded-xl border border-neutral-300 bg-white/60 p-5 sm:p-6">
+                <div class="label-micro font-arabic" dir="rtl">معلومات التوصيل</div>
+                <div class="mt-5 space-y-4">
+                    <div>
+                        <label class="label-micro font-arabic" dir="rtl" for="checkoutCity">المحافظة</label>
+                        <input id="checkoutCity" name="city" class="input font-arabic mt-2" dir="rtl" type="text"
+                            required placeholder="مثال: دمشق">
+                    </div>
+                    <div>
+                        <label class="label-micro font-arabic" dir="rtl" for="checkoutPlace">العنوان</label>
+                        <textarea id="checkoutPlace" name="place" class="input font-arabic mt-2 min-h-24" dir="rtl"
+                            required placeholder="اكتب العنوان بالتفصيل"></textarea>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="rounded-xl border border-dashed border-neutral-400/80 bg-white/50 p-5 sm:p-6">
                 <p class="text-sm leading-relaxed text-neutral-600 font-arabic" dir="rtl">
                     تريد المزيد؟ يمكنك متابعة التسوق والعودة هنا في أي وقت لإتمام الطلب.
@@ -162,10 +180,15 @@
                 <div class="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                     {% if global_cart|length %}
                     <button id="checkoutWhatsAppButton"
-                        class="btn btn-primary w-full justify-center sm:w-auto sm:flex-1 font-arabic" dir="rtl"
-                        type="button" data-whatsapp-number="{{ whatsapp_order_number }}">
+                        class="btn btn-primary w-full justify-center sm:w-auto sm:flex-1 font-arabic {% if cart_has_sold %}opacity-50 cursor-not-allowed{% endif %}"
+                        dir="rtl" type="button" data-whatsapp-number="{{ whatsapp_order_number }}" {% if cart_has_sold
+                        %}disabled{% endif %}>
                         {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
+                        {% if cart_has_sold %}
+                        لا يمكن تأكيد الطلب
+                        {% else %}
                         تأكيد عبر واتساب
+                        {% endif %}
                     </button>
                     {% endif %}
                     {% with action_btn_classes='w-full justify-center sm:w-auto sm:flex-1' %}
@@ -189,6 +212,12 @@
                     {% endwith %}
                     {% endwith %}
                 </div>
+                {% if global_cart|length and cart_has_sold %}
+                <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 font-arabic"
+                    dir="rtl">
+                    يوجد منتج غير متوفر داخل السلة. احذف المنتجات غير المتوفرة ثم أعد المحاولة.
+                </div>
+                {% endif %}
 </section>
 {% if global_cart|length %}
 <script>
@@ -197,7 +226,29 @@
         if (!button) return;
 
         button.addEventListener('click', () => {
+            if (button.classList.contains('cursor-not-allowed')) return;
+
+            const cityInput = document.getElementById('checkoutCity');
+            const placeInput = document.getElementById('checkoutPlace');
+            const city = cityInput && 'value' in cityInput ? String(cityInput.value || '').trim() : '';
+            const place = placeInput && 'value' in placeInput ? String(placeInput.value || '').trim() : '';
+
+            if (!cityInput || !placeInput) return;
+            if (!city) {
+                cityInput.focus();
+                cityInput.reportValidity();
+                return;
+            }
+            if (!place) {
+                placeInput.focus();
+                placeInput.reportValidity();
+                return;
+            }
+
             const lines = ["طلب جديد من GHANDY", ""];
+            lines.push("المحافظة: " + city);
+            lines.push("العنوان: " + place);
+            lines.push("");
             {% for key, value in global_cart.cart.items %}
             lines.push("المنتج: {{ value.name|escapejs }}");
             {% if value.color_name %} lines.push("اللون: {{ value.color_name|escapejs }}"); {% endif %}
