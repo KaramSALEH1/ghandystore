@@ -21,7 +21,7 @@
                     <details class="relative">
                         <summary class="nav-link font-arabic cursor-pointer select-none" dir="rtl">التصنيفات</summary>
                         <div
-                            class="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-neutral-200 bg-white/95 p-2 shadow-xl backdrop-blur-sm">
+                            class="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-neutral-200 bg-white/95 p-2 shadow-xl backdrop-blur-sm">
                             <div class="max-h-72 overflow-auto">
                                 <a class="block nav-link px-3 py-2 font-arabic" dir="rtl"
                                     href="{% url 'item:items' %}">الكل</a>
@@ -79,8 +79,7 @@
                     <a class="block nav-link py-2 font-arabic" dir="rtl" href="/">الرئيسية</a>
                     <a class="block nav-link py-2 font-arabic" dir="rtl" href="{% url 'item:items' %}">المتجر</a>
                     {% for category in global_categories %}
-                    <a class="block nav-link py-2" href="{% url 'item:items' %}?category={{ category.id }}">{{
-                        category.name }}</a>
+                    <a class="block nav-link py-2" href="{% url 'item:items' %}?category={{ category.id }}">{{ category.name }}</a>
                     {% endfor %}
                     <div class="pt-2">
                         {% with text='تسوق الآن' %}
