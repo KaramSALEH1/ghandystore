@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
 from item.cart import Cart
-from item.models import Category, Item
+from item.models import Category, Item, City
 from .forms import SignupForm
 
 def index(request):
@@ -35,5 +35,6 @@ def checkout(request):
     return render(request, 'base/checkout.html', {
         'whatsapp_order_number': getattr(settings, 'WHATSAPP_ORDER_NUMBER', '963937341881'),
         'cart_has_sold': cart_has_sold,
+        'cities': City.objects.prefetch_related('places').all(),
     })
 
