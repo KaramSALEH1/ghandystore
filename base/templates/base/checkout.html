@@ -239,8 +239,6 @@
 <script>
     (() => {
         const button = document.getElementById('checkoutWhatsAppButton');
-        if (!button) return;
-
         const cityInput = document.getElementById('checkoutCity');
         const placeInput = document.getElementById('checkoutPlace');
 
@@ -254,25 +252,33 @@
         };
 
         if (cityInput instanceof HTMLSelectElement && placeInput instanceof HTMLSelectElement) {
-            const placeOptions = Array.from(placeInput.querySelectorAll('option[data-city-id]'));
-            const updatePlaces = () => {
+            const allPlaces = Array.from(placeInput.querySelectorAll('option[data-city-id]')).map((opt) => ({
+                cityId: String(opt.dataset.cityId || ''),
+                value: String(opt.value || ''),
+                text: String(opt.text || ''),
+            }));
+
+            const renderPlaces = () => {
                 const cityId = cityInput.value;
-                placeOptions.forEach((opt) => {
-                    opt.hidden = opt.dataset.cityId !== cityId;
+                const matching = allPlaces.filter((p) => p.cityId === cityId);
+
+                const placeholderText = matching.length ? 'اختر المنطقة' : 'لا توجد مناطق';
+                placeInput.innerHTML = `<option value=\"\" selected disabled>${placeholderText}</option>`;
+
+                matching.forEach((p) => {
+                    const option = document.createElement('option');
+                    option.value = p.value;
+                    option.text = p.text;
+                    placeInput.appendChild(option);
                 });
-                placeInput.disabled = !cityId;
-                if (!cityId) {
-                    placeInput.value = '';
-                    return;
-                }
-                const selectedOption = placeInput.selectedOptions && placeInput.selectedOptions[0];
-                if (selectedOption && selectedOption.dataset.cityId !== cityId) {
-                    placeInput.value = '';
-                }
+
+                placeInput.disabled = !cityId || !matching.length;
             };
-            updatePlaces();
-            cityInput.addEventListener('change', updatePlaces);
+            renderPlaces();
+            cityInput.addEventListener('change', renderPlaces);
         }
+
+        if (!button) return;
 
         button.addEventListener('click', () => {
             if (button.classList.contains('cursor-not-allowed')) return;
