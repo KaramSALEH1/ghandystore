@@ -179,7 +179,9 @@
         transparent 45%
       ),
       url("footer-texture.svg");
-    background-size: auto, 96px 96px;
+    background-position: center top, center top;
+    background-repeat: no-repeat, repeat;
+    background-size: cover, 96px 96px;
   }
 
   .site-footer .footer-meta {
@@ -192,5 +194,20 @@
 
   .site-footer .footer-meta .nav-link::after {
     @apply bg-primary-300/40;
+  }
+
+  @media (max-width: 640px) {
+    .site-footer {
+      background-size: 170% auto, 72px 72px;
+      background-position: center top, center top;
+    }
+
+    .site-footer .card-soft {
+      @apply p-4;
+    }
+
+    .site-footer .footer-meta {
+      @apply mt-4 pt-4;
+    }
   }
 }

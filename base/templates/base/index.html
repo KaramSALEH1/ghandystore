@@ -51,29 +51,10 @@
         {% endwith %}
     </div>
 
-    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="mt-5 grid grid-cols-2 md:grid-cols-3 gap-4">
         {% for item in items|slice:":3" %}
         {% include 'item/partials/product_card.html' with product=item %}
         {% endfor %}
-    </div>
-</section>
-
-<section class="panel mt-6 p-4 sm:p-6 lg:p-7">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div class="lg:col-span-5">
-            <h2></h2>
-            <div class="mt-5 grid grid-cols-2 gap-3">
-                {% for item in items|slice:"3:7" %}
-                <div class="media-frame {% if forloop.first %}row-span-2 h-[260px]{% else %}h-[124px]{% endif %}">
-                    {% if item.image_url %}
-                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-
     </div>
 </section>
 {% endblock %}

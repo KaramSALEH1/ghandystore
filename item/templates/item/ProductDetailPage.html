@@ -8,11 +8,12 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7 items-start">
         <div class="lg:col-span-5">
             <div class="card-soft p-4 sm:p-5">
-                <div class="media-frame aspect-[0.95/1]" style="background-color: {{ item|item_accent_surface }};">
+                <div id="imageCarousel" class="media-frame image-carousel aspect-[0.95/1] select-none"
+                    style="background-color: {{ item|item_accent_surface }};">
                     {% if all_images %}
-                    <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}">
+                    <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}" draggable="false">
                     {% elif item.image_url %}
-                    <img id="mainImage" src="{{ item.image_url }}" alt="{{ item.name }}">
+                    <img id="mainImage" src="{{ item.image_url }}" alt="{{ item.name }}" draggable="false">
                     {% else %}
                     <div class="flex h-full w-full items-center justify-center rounded-xl2 bg-neutral-200/60">
                         <p class="text-neutral-500 font-arabic" dir="rtl">لا توجد صورة</p>
@@ -194,23 +195,122 @@
 </section>
 
 <script>
-    function changeMainImage(imageUrl, clickedElement) {
-        const mainImage = document.getElementById('mainImage');
-        if (!mainImage) return;
+    const productImages = [
+        {% for img in all_images %}
+        {
+            url: '{{ img.url|escapejs }}',
+            alt: '{{ img.alt|default:item.name|escapejs }}'
+        }{% if not forloop.last %},{% endif %}
+        {% empty %}
+        {% if item.image_url %}
+        {
+            url: '{{ item.image_url|escapejs }}',
+            alt: '{{ item.name|escapejs }}'
+        }
+        {% endif %}
+        {% endfor %}
+    ];
+    let activeImageIndex = 0;
 
-        mainImage.src = imageUrl;
-
+    function updateThumbnailState(activeIndex) {
         const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
-        thumbnails.forEach((thumb) => {
-            thumb.classList.remove('bg-neutral-700');
-            thumb.classList.add('bg-neutral-300');
+        thumbnails.forEach((thumb, index) => {
+            thumb.classList.toggle('bg-neutral-700', index === activeIndex);
+            thumb.classList.toggle('bg-neutral-300', index !== activeIndex);
         });
+    }
 
-        clickedElement.classList.remove('bg-neutral-300');
-        clickedElement.classList.add('bg-neutral-700');
+    function setImageByIndex(index) {
+        const mainImage = document.getElementById('mainImage');
+        if (!mainImage || !productImages.length) return;
+
+        const boundedIndex = (index + productImages.length) % productImages.length;
+        activeImageIndex = boundedIndex;
+        mainImage.src = productImages[boundedIndex].url;
+        mainImage.alt = productImages[boundedIndex].alt;
+        updateThumbnailState(boundedIndex);
+    }
+
+    function changeMainImage(imageUrl, clickedElement) {
+        const imageIndex = productImages.findIndex((image) => image.url === imageUrl);
+        if (imageIndex !== -1) {
+            setImageByIndex(imageIndex);
+            return;
+        }
+        if (clickedElement && clickedElement.dataset.imageUrl) {
+            const fallbackIndex = Array.from(document.querySelectorAll('#imageGallery .image-thumbnail')).indexOf(clickedElement);
+            if (fallbackIndex !== -1) setImageByIndex(fallbackIndex);
+        }
+    }
+
+    function initImageSwipe() {
+        const carousel = document.getElementById('imageCarousel');
+        if (!carousel || productImages.length < 2) return;
+
+        const swipeThreshold = 44;
+        let pointerStartX = 0;
+        let pointerStartY = 0;
+        let deltaX = 0;
+        let isDragging = false;
+        let dragLockedHorizontal = false;
+
+        carousel.style.touchAction = 'pan-y';
+
+        const onPointerDown = (event) => {
+            if (event.button !== undefined && event.button !== 0) return;
+            pointerStartX = event.clientX;
+            pointerStartY = event.clientY;
+            deltaX = 0;
+            isDragging = true;
+            dragLockedHorizontal = false;
+            carousel.classList.add('cursor-grabbing');
+            if (carousel.setPointerCapture) {
+                carousel.setPointerCapture(event.pointerId);
+            }
+        };
+
+        const onPointerMove = (event) => {
+            if (!isDragging) return;
+            deltaX = event.clientX - pointerStartX;
+            const deltaY = event.clientY - pointerStartY;
+
+            if (!dragLockedHorizontal) {
+                dragLockedHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+            }
+            if (dragLockedHorizontal) {
+                event.preventDefault();
+            }
+        };
+
+        const onPointerEnd = (event) => {
+            if (!isDragging) return;
+            isDragging = false;
+            carousel.classList.remove('cursor-grabbing');
+            if (carousel.releasePointerCapture) {
+                carousel.releasePointerCapture(event.pointerId);
+            }
+            if (Math.abs(deltaX) >= swipeThreshold) {
+                const direction = deltaX < 0 ? 1 : -1;
+                setImageByIndex(activeImageIndex + direction);
+            }
+        };
+
+        carousel.addEventListener('pointerdown', onPointerDown);
+        carousel.addEventListener('pointermove', onPointerMove);
+        carousel.addEventListener('pointerup', onPointerEnd);
+        carousel.addEventListener('pointercancel', onPointerEnd);
+        carousel.addEventListener('pointerleave', onPointerEnd);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        setImageByIndex(0);
+        initImageSwipe();
+
+        const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
+        thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => setImageByIndex(index));
+        });
+
         const buyButton = document.getElementById('buyButton');
         if (buyButton) {
             buyButton.addEventListener('click', function () {
