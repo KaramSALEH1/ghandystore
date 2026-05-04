@@ -8,16 +8,30 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7 items-start">
         <div class="lg:col-span-5">
             <div class="card-soft p-4 sm:p-5">
-                <div id="imageCarousel" class="media-frame image-carousel aspect-[0.95/1] select-none"
+                <div id="imageCarousel" class="media-frame image-carousel relative aspect-[0.95/1] select-none overflow-hidden"
                     style="background-color: {{ item|item_accent_surface }};">
                     {% if all_images %}
-                    <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}" draggable="false">
+                    <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}"
+                        class="h-full w-full object-contain transition-opacity duration-300 ease-out" draggable="false">
                     {% elif item.image_url %}
-                    <img id="mainImage" src="{{ item.image_url }}" alt="{{ item.name }}" draggable="false">
+                    <img id="mainImage" src="{{ item.image_url }}" alt="{{ item.name }}"
+                        class="h-full w-full object-contain transition-opacity duration-300 ease-out" draggable="false">
                     {% else %}
                     <div class="flex h-full w-full items-center justify-center rounded-xl2 bg-neutral-200/60">
                         <p class="text-neutral-500 font-arabic" dir="rtl">لا توجد صورة</p>
                     </div>
+                    {% endif %}
+                    {% if all_images|length > 1 %}
+                    <button type="button"
+                        class="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 hover:bg-white transition"
+                        data-carousel-prev aria-label="الصورة السابقة">
+                        <span aria-hidden="true">‹</span>
+                    </button>
+                    <button type="button"
+                        class="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 hover:bg-white transition"
+                        data-carousel-next aria-label="الصورة التالية">
+                        <span aria-hidden="true">›</span>
+                    </button>
                     {% endif %}
                 </div>
 
@@ -26,8 +40,8 @@
                     <div class="flex overflow-x-auto gap-2 pb-1 scrollbar-hide" id="imageGallery">
                         {% for img in all_images %}
                         <button type="button"
-                            class="image-thumbnail h-2 w-2 rounded-full {% if forloop.first %}bg-neutral-700{% else %}bg-neutral-300{% endif %}"
-                            onclick="changeMainImage('{{ img.url }}', this)" data-image-url="{{ img.url }}"
+                            class="image-thumbnail h-2.5 w-2.5 rounded-full transition-all duration-200 {% if forloop.first %}bg-neutral-800 scale-110 ring-2 ring-neutral-400/60{% else %}bg-neutral-300{% endif %}"
+                            data-image-index="{{ forloop.counter0 }}"
                             aria-label="اختر صورة المنتج"></button>
                         {% endfor %}
                     </div>
@@ -230,48 +244,75 @@
         {% endfor %}
     ];
     let activeImageIndex = 0;
+    let pendingImageSwap = null;
 
     function updateThumbnailState(activeIndex) {
         const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
         thumbnails.forEach((thumb, index) => {
-            thumb.classList.toggle('bg-neutral-700', index === activeIndex);
+            thumb.classList.toggle('bg-neutral-800', index === activeIndex);
+            thumb.classList.toggle('scale-110', index === activeIndex);
+            thumb.classList.toggle('ring-2', index === activeIndex);
+            thumb.classList.toggle('ring-neutral-400/60', index === activeIndex);
             thumb.classList.toggle('bg-neutral-300', index !== activeIndex);
+            thumb.setAttribute('aria-current', index === activeIndex ? 'true' : 'false');
         });
     }
 
-    function setImageByIndex(index) {
+    function setImageByIndex(index, options = {}) {
+        const { animate = true } = options;
         const mainImage = document.getElementById('mainImage');
         if (!mainImage || !productImages.length) return;
 
         const boundedIndex = (index + productImages.length) % productImages.length;
         activeImageIndex = boundedIndex;
-        mainImage.src = productImages[boundedIndex].url;
-        mainImage.alt = productImages[boundedIndex].alt;
+        const nextImage = productImages[boundedIndex];
+
+        if (pendingImageSwap) {
+            window.clearTimeout(pendingImageSwap);
+            pendingImageSwap = null;
+        }
+
+        const applyImage = () => {
+            mainImage.src = nextImage.url;
+            mainImage.alt = nextImage.alt;
+            mainImage.classList.remove('opacity-0');
+        };
+
+        if (animate) {
+            mainImage.classList.add('opacity-0');
+            pendingImageSwap = window.setTimeout(() => {
+                applyImage();
+                pendingImageSwap = null;
+            }, 120);
+        } else {
+            applyImage();
+        }
+
         updateThumbnailState(boundedIndex);
     }
 
-    function changeMainImage(imageUrl, clickedElement) {
-        const imageIndex = productImages.findIndex((image) => image.url === imageUrl);
-        if (imageIndex !== -1) {
-            setImageByIndex(imageIndex);
-            return;
-        }
-        if (clickedElement && clickedElement.dataset.imageUrl) {
-            const fallbackIndex = Array.from(document.querySelectorAll('#imageGallery .image-thumbnail')).indexOf(clickedElement);
-            if (fallbackIndex !== -1) setImageByIndex(fallbackIndex);
-        }
+    function goToNextImage() {
+        if (productImages.length < 2) return;
+        setImageByIndex(activeImageIndex + 1);
     }
 
-    function initImageSwipe() {
+    function goToPreviousImage() {
+        if (productImages.length < 2) return;
+        setImageByIndex(activeImageIndex - 1);
+    }
+
+    function initImageNavigation() {
         const carousel = document.getElementById('imageCarousel');
         if (!carousel || productImages.length < 2) return;
 
-        const swipeThreshold = 44;
+        const swipeThreshold = 48;
+        const axisLockThreshold = 10;
         let pointerStartX = 0;
         let pointerStartY = 0;
         let deltaX = 0;
+        let deltaY = 0;
         let isDragging = false;
-        let dragLockedHorizontal = false;
+        let gestureAxis = null;
 
         carousel.style.touchAction = 'pan-y';
 
@@ -280,55 +321,55 @@
             pointerStartX = event.clientX;
             pointerStartY = event.clientY;
             deltaX = 0;
+            deltaY = 0;
             isDragging = true;
-            dragLockedHorizontal = false;
-            carousel.classList.add('cursor-grabbing');
-            if (carousel.setPointerCapture) {
-                carousel.setPointerCapture(event.pointerId);
-            }
+            gestureAxis = null;
         };
 
         const onPointerMove = (event) => {
             if (!isDragging) return;
             deltaX = event.clientX - pointerStartX;
-            const deltaY = event.clientY - pointerStartY;
+            deltaY = event.clientY - pointerStartY;
 
-            if (!dragLockedHorizontal) {
-                dragLockedHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+            if (!gestureAxis && (Math.abs(deltaX) > axisLockThreshold || Math.abs(deltaY) > axisLockThreshold)) {
+                gestureAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
             }
-            if (dragLockedHorizontal) {
+            if (gestureAxis === 'x') {
                 event.preventDefault();
             }
         };
 
-        const onPointerEnd = (event) => {
+        const onPointerEnd = () => {
             if (!isDragging) return;
             isDragging = false;
-            carousel.classList.remove('cursor-grabbing');
-            if (carousel.releasePointerCapture) {
-                carousel.releasePointerCapture(event.pointerId);
-            }
-            if (Math.abs(deltaX) >= swipeThreshold) {
+            if (gestureAxis === 'x' && Math.abs(deltaX) >= swipeThreshold) {
                 const direction = deltaX < 0 ? 1 : -1;
                 setImageByIndex(activeImageIndex + direction);
             }
+            gestureAxis = null;
         };
-
-        carousel.addEventListener('pointerdown', onPointerDown);
-        carousel.addEventListener('pointermove', onPointerMove);
-        carousel.addEventListener('pointerup', onPointerEnd);
-        carousel.addEventListener('pointercancel', onPointerEnd);
-        carousel.addEventListener('pointerleave', onPointerEnd);
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        setImageByIndex(0);
-        initImageSwipe();
 
         const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
         thumbnails.forEach((thumb, index) => {
             thumb.addEventListener('click', () => setImageByIndex(index));
         });
+
+        const prevButton = carousel.querySelector('[data-carousel-prev]');
+        const nextButton = carousel.querySelector('[data-carousel-next]');
+        if (prevButton) prevButton.addEventListener('click', goToPreviousImage);
+        if (nextButton) nextButton.addEventListener('click', goToNextImage);
+
+        carousel.addEventListener('pointerdown', onPointerDown);
+        carousel.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerEnd);
+        window.addEventListener('pointercancel', onPointerEnd);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (productImages.length) {
+            setImageByIndex(0, { animate: false });
+            initImageNavigation();
+        }
 
         const buyButton = document.getElementById('buyButton');
         if (buyButton) {
