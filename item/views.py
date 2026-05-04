@@ -127,7 +127,7 @@ def detail(request, pk):
     item_image_url = _safe_image_url(item.image)
     
     # If color is selected, collect its images first
-    if selected_color and not selected_color.is_sold_out:
+    if selected_color:
         for color_image in selected_color.images.all():
             color_url = _safe_image_url(color_image.image)
             if color_url:
@@ -154,7 +154,7 @@ def detail(request, pk):
     
     # Add other color images (excluding selected color if it was added above)
     for color in colors:
-        if not color.is_sold_out and color != selected_color:
+        if color != selected_color:
             for color_image in color.images.all():
                 color_url = _safe_image_url(color_image.image)
                 if color_url:
@@ -185,7 +185,7 @@ def detail(request, pk):
                 if selected_color:
                     all_images = []
                     selected_color_images = []
-                    if not selected_color.is_sold_out:
+                    if selected_color:
                         for color_image in selected_color.images.all():
                             color_url = _safe_image_url(color_image.image)
                             if color_url:
@@ -206,7 +206,7 @@ def detail(request, pk):
                         })
                     all_images.extend(selected_color_images)
                     for color in colors:
-                        if not color.is_sold_out and color != selected_color:
+                        if color != selected_color:
                             for color_image in color.images.all():
                                 color_url = _safe_image_url(color_image.image)
                                 if color_url:
@@ -263,7 +263,7 @@ def detail(request, pk):
                 # Also rebuild images list to show selected color first
                 all_images = []
                 selected_color_images = []
-                if not selected_color.is_sold_out:
+                if selected_color:
                     for color_image in selected_color.images.all():
                         color_url = _safe_image_url(color_image.image)
                         if color_url:
@@ -284,7 +284,7 @@ def detail(request, pk):
                     })
                 all_images.extend(selected_color_images)
                 for color in colors:
-                    if not color.is_sold_out and color != selected_color:
+                    if color != selected_color:
                         for color_image in color.images.all():
                             color_url = _safe_image_url(color_image.image)
                             if color_url:

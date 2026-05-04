@@ -8,7 +8,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-7 items-start">
         <div class="lg:col-span-5">
             <div class="card-soft p-4 sm:p-5">
-                <div id="imageCarousel" class="media-frame image-carousel relative aspect-[0.95/1] select-none overflow-hidden"
+                <div id="imageCarousel"
+                    class="media-frame image-carousel relative aspect-[0.95/1] select-none overflow-hidden"
                     style="background-color: {{ item|item_accent_surface }};">
                     {% if all_images %}
                     <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}"
@@ -41,8 +42,7 @@
                         {% for img in all_images %}
                         <button type="button"
                             class="image-thumbnail h-2.5 w-2.5 rounded-full transition-all duration-200 {% if forloop.first %}bg-neutral-800 scale-110 ring-2 ring-neutral-400/60{% else %}bg-neutral-300{% endif %}"
-                            data-image-index="{{ forloop.counter0 }}"
-                            aria-label="اختر صورة المنتج"></button>
+                            data-image-index="{{ forloop.counter0 }}" aria-label="اختر صورة المنتج"></button>
                         {% endfor %}
                     </div>
                 </div>
@@ -137,13 +137,12 @@
                         <p id="sizeValidation" class="mt-2 text-xs text-red-600">Please select a size</p>
                     </div>
                     {% endif %}
-                    <button type="submit"
-                        id="addToCartButton"
+                    <button type="submit" id="addToCartButton"
                         data-base-disabled="{% if item.is_sold or not selected_color or selected_color.is_sold_out %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}disabled{% endif %}
-                        dir="rtl">
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes
+                        %}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span>
                             {% if item.is_sold %}
@@ -160,9 +159,11 @@
                 </form>
                 <div class="mt-3">
                     <button id="buyButton" type="button"
-                        class="btn btn-primary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out %}opacity-50 cursor-not-allowed{% endif %} {% if show_form %}hidden{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out %}disabled{% endif %}
-                        dir="rtl">
+                        data-base-disabled="{% if item.is_sold or not selected_color or selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
+                        class="btn btn-primary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %} {% if show_form %}hidden{% endif %}"
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes
+                        %}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
                         <span>
                             {% if item.is_sold %}
@@ -196,12 +197,17 @@
                         action="{% url 'item:detail' item.id %}{% if selected_color %}?color={{ selected_color.id }}{% endif %}"
                         class="space-y-3" id="purchaseForm">
                         {% csrf_token %}
-                        {% if selected_color %}<input type="hidden" name="color" value="{{ selected_color.id }}">{% endif %}
+                        {% if selected_color %}<input type="hidden" name="color" value="{{ selected_color.id }}">{%
+                        endif %}
+                        {% if item.available_sizes %}<input type="hidden" name="size" id="selectedWhatsappSizeInput"
+                            value="">{% endif %}
                         {% if form.customer_name %}{{ form.customer_name }}{% endif %}
                         {% if form.customer_phone %}{{ form.customer_phone }}{% endif %}
                         {% if form.city %}{{ form.city }}{% endif %}
                         {% if form.place %}{{ form.place }}{% endif %}
-                        <button type="submit" class="btn btn-primary w-full font-arabic" dir="rtl">
+                        <button type="submit" id="purchaseSubmitButton"
+                            class="btn btn-primary w-full font-arabic {% if item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
+                            {% if item.available_sizes %}disabled{% endif %} dir="rtl">
                             {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
                             <span>إرسال عبر واتساب</span>
                         </button>
@@ -227,21 +233,35 @@
     </div>
 </section>
 
+<style>
+    #sizeSelector button[aria-pressed="true"] {
+        background-color: #171717;
+        border-color: #171717;
+        color: #ffffff;
+    }
+
+    #sizeSelector button[aria-pressed="false"] {
+        background-color: #ffffff;
+        border-color: #d4d4d4;
+        color: #262626;
+    }
+</style>
+
 <script>
     const productImages = [
         {% for img in all_images %}
-        {
-            url: '{{ img.url|escapejs }}',
+    {
+        url: '{{ img.url|escapejs }}',
             alt: '{{ img.alt|default:item.name|escapejs }}'
-        }{% if not forloop.last %},{% endif %}
-        {% empty %}
-        {% if item.image_url %}
-        {
-            url: '{{ item.image_url|escapejs }}',
+    } {% if not forloop.last %}, {% endif %}
+    {% empty %}
+    {% if item.image_url %}
+    {
+        url: '{{ item.image_url|escapejs }}',
             alt: '{{ item.name|escapejs }}'
-        }
-        {% endif %}
-        {% endfor %}
+    }
+    {% endif %}
+    {% endfor %}
     ];
     let activeImageIndex = 0;
     let pendingImageSwap = null;
@@ -445,6 +465,9 @@
         const sizeInput = document.getElementById('selectedSizeInput');
         const sizeValidation = document.getElementById('sizeValidation');
         const addToCartButton = document.getElementById('addToCartButton');
+        const purchaseForm = document.getElementById('purchaseForm');
+        const purchaseSubmitButton = document.getElementById('purchaseSubmitButton');
+        const whatsappSizeInput = document.getElementById('selectedWhatsappSizeInput');
 
         if (sizeSelector && sizeInput && addToCartButton) {
             const baseDisabled = String(addToCartButton.dataset.baseDisabled || '0') === '1';
@@ -470,11 +493,34 @@
                 addToCartButton.classList.toggle('cursor-not-allowed', !!disabled);
             };
 
+            const setWhatsappDisabledState = (disabled) => {
+                if (buyButton) {
+                    buyButton.disabled = !!disabled;
+                    buyButton.classList.toggle('opacity-50', !!disabled);
+                    buyButton.classList.toggle('cursor-not-allowed', !!disabled);
+                }
+                if (purchaseSubmitButton) {
+                    purchaseSubmitButton.disabled = !!disabled;
+                    purchaseSubmitButton.classList.toggle('opacity-50', !!disabled);
+                    purchaseSubmitButton.classList.toggle('cursor-not-allowed', !!disabled);
+                }
+            };
+
             const updateSizeState = () => {
-                if (baseDisabled) return;
-                if (!sizeRequired) return;
                 const hasSize = !!String(sizeInput.value || '').trim();
+                if (whatsappSizeInput) {
+                    whatsappSizeInput.value = hasSize ? sizeInput.value : '';
+                }
+                if (baseDisabled) {
+                    setWhatsappDisabledState(true);
+                    return;
+                }
+                if (!sizeRequired) {
+                    setWhatsappDisabledState(false);
+                    return;
+                }
                 setDisabledState(!hasSize);
+                setWhatsappDisabledState(!hasSize);
                 if (sizeValidation) {
                     sizeValidation.classList.toggle('hidden', hasSize);
                 }
@@ -491,6 +537,19 @@
 
             // Initial state: required sizes disable Add to Cart until one is selected.
             updateSizeState();
+
+            if (purchaseForm) {
+                purchaseForm.addEventListener('submit', (event) => {
+                    if (!sizeRequired || baseDisabled) return;
+                    const hasSize = !!String(sizeInput.value || '').trim();
+                    if (hasSize) return;
+                    event.preventDefault();
+                    if (sizeValidation) {
+                        sizeValidation.classList.remove('hidden');
+                        sizeValidation.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            }
         }
     });
 </script>
