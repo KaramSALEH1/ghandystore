@@ -1,4 +1,5 @@
 {% extends 'base/base.html' %}
+{% load item_extras %}
 
 {% block title %}{{ category }}{% endblock %}
 
@@ -24,7 +25,10 @@
                     {% for item in items|slice:":2" %}
                     <a href="{% url 'item:detail' item.id %}" class="media-frame h-[190px] sm:h-[210px]">
                         {% if item.image_url %}
-                        <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                        <img src="{{ item.image_url }}" srcset="{{ item.image_url|responsive_srcset }}"
+                            sizes="(max-width: 1024px) 94vw, 34vw" alt="{{ item.name }}"
+                            loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" decoding="async"
+                            width="900" height="990">
                         {% endif %}
                         <div
                             class="absolute inset-auto bottom-4 left-5 font-heading text-5xl leading-none text-neutral-900/80">
@@ -40,7 +44,9 @@
                     <a href="{% url 'item:detail' item.id %}"
                         class="media-frame {% if forloop.first %}h-[260px]{% else %}h-[140px]{% endif %}">
                         {% if item.image_url %}
-                        <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                        <img src="{{ item.image_url }}" srcset="{{ item.image_url|responsive_srcset }}"
+                            sizes="(max-width: 1024px) 94vw, 30vw" alt="{{ item.name }}" loading="lazy" decoding="async"
+                            width="900" height="990">
                         {% endif %}
                         {% if forloop.first %}
                         <div

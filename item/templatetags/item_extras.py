@@ -5,6 +5,7 @@ from django import template
 register = template.Library()
 
 _HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+_RASTER_EXT_RE = re.compile(r"\.(jpe?g|png)$", flags=re.IGNORECASE)
 
 _SWATCH_BY_NAME = {
     "aliceblue": "#f0f8ff",
@@ -235,3 +236,36 @@ def item_accent_surface(item) -> str:
 @register.filter
 def item_accent_border(item) -> str:
     return _hex_to_rgba(_item_accent_hex(item), 0.28)
+
+
+@register.filter
+def prefer_webp_url(url: str) -> str:
+    value = str(url or "").strip()
+    if not value:
+        return ""
+    parts = re.split(r"([?#].*)", value, maxsplit=1)
+    base = parts[0]
+    suffix = parts[1] if len(parts) > 1 else ""
+    if _RASTER_EXT_RE.search(base):
+        return _RASTER_EXT_RE.sub(".webp", base) + suffix
+    return value
+
+
+@register.filter
+def responsive_srcset(url: str) -> str:
+    value = str(url or "").strip()
+    if not value:
+        return ""
+    # Keep width hints so the browser can pick an appropriate candidate.
+    # If only one source file exists, all candidates still resolve safely.
+    return f"{value} 480w, {value} 768w, {value} 1200w"
+
+
+@register.filter
+def product_card_sizes(_=None) -> str:
+    return "(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 22vw"
+
+
+@register.filter
+def product_detail_sizes(_=None) -> str:
+    return "(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 40vw"

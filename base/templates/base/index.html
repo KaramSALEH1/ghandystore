@@ -1,4 +1,5 @@
 {% extends 'base/base.html' %}
+{% load item_extras %}
 
 {% block title %}الرئيسية{% endblock %}
 
@@ -33,7 +34,10 @@
             <div class="media-frame h-[185px] sm:h-[205px]">
                 {% with side_item=items.1 %}
                 {% if side_item and side_item.image_url %}
-                <img src="{{ side_item.image_url }}" alt="{{ side_item.name }}">
+                <img src="{{ side_item.image_url }}" srcset="{{ side_item.image_url|responsive_srcset }}"
+                    sizes="(max-width: 1024px) 94vw, 54vw" alt="{{ side_item.name }}" loading="eager"
+                    fetchpriority="high" decoding="async" width="1280" height="740"
+                    onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221280%22 height=%22740%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23e5e5e5%22/></svg>';this.srcset='';}">
                 {% endif %}
                 {% endwith %}
             </div>

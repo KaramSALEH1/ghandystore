@@ -8,7 +8,10 @@
         <div class="media-frame aspect-[1/1.04] rounded-b-none"
             style="background-color: {{ product|item_accent_surface }};">
             {% if product.image_url %}
-            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            <img src="{{ product.image_url }}" srcset="{{ product.image_url|responsive_srcset }}"
+                sizes="{{ ''|product_card_sizes }}" alt="{{ product.name }}" loading="lazy" decoding="async"
+                width="640" height="666"
+                onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22640%22 height=%22666%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23e5e5e5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23737373%22 font-family=%22Arial%22 font-size=%2224%22>Image unavailable</text></svg>';this.srcset='';}">
             {% else %}
             <div class="flex h-full w-full items-center justify-center bg-neutral-200/60 text-sm text-neutral-500 font-arabic" dir="rtl">لا توجد صورة</div>
             {% endif %}

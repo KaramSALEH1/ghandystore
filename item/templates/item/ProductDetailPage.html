@@ -13,15 +13,25 @@
                     style="background-color: {{ item|item_accent_surface }};">
                     {% if all_images %}
                     <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}"
-                        class="h-full w-full object-contain transition-opacity duration-300 ease-out" draggable="false">
+                        srcset="{{ all_images.0.url|responsive_srcset }}" sizes="{{ ''|product_detail_sizes }}"
+                        loading="eager" decoding="async" fetchpriority="high" width="960" height="1010"
+                        class="h-full w-full object-contain transition-opacity duration-200 ease-out" draggable="false">
                     {% elif item.image_url %}
                     <img id="mainImage" src="{{ item.image_url }}" alt="{{ item.name }}"
-                        class="h-full w-full object-contain transition-opacity duration-300 ease-out" draggable="false">
+                        srcset="{{ item.image_url|responsive_srcset }}" sizes="{{ ''|product_detail_sizes }}"
+                        loading="eager" decoding="async" fetchpriority="high" width="960" height="1010"
+                        class="h-full w-full object-contain transition-opacity duration-200 ease-out" draggable="false">
                     {% else %}
                     <div class="flex h-full w-full items-center justify-center rounded-xl2 bg-neutral-200/60">
                         <p class="text-neutral-500 font-arabic" dir="rtl">لا توجد صورة</p>
                     </div>
                     {% endif %}
+                    <div id="mainImageLoader"
+                        class="pointer-events-none absolute inset-0 z-[1] hidden items-center justify-center bg-white/20 backdrop-blur-[1px]"
+                        aria-hidden="true">
+                        <span
+                            class="h-7 w-7 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-700"></span>
+                    </div>
                     {% if all_images|length > 1 %}
                     <button type="button"
                         class="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 hover:bg-white transition"
@@ -70,7 +80,7 @@
             {% if colors %}
             <div class="mt-5">
                 <div class="label-micro mb-2 font-arabic" dir="rtl">اللون</div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2" id="colorSelector">
                     {% for color in colors %}
                     {% if color.is_sold_out %}
                     <span
@@ -88,7 +98,9 @@
                     </span>
                     {% else %}
                     <a href="{% url 'item:detail' item.id %}?color={{ color.id }}"
-                        class="badge inline-flex items-center gap-2 {% if selected_color and selected_color.id == color.id %}bg-secondary-100 border-neutral-500/40{% endif %}">
+                        class="badge inline-flex items-center gap-2 transition-colors duration-150 {% if selected_color and selected_color.id == color.id %}bg-secondary-100 border-neutral-500/40{% endif %}"
+                        data-color-option data-color-id="{{ color.id }}" data-color-name="{{ color.name|escape }}"
+                        aria-current="{% if selected_color and selected_color.id == color.id %}true{% else %}false{% endif %}">
                         {% if color|itemcolor_has_swatch %}
                         <span class="h-3.5 w-3.5 shrink-0 rounded-full border border-neutral-400 ring-1 ring-white"
                             style="background-color: {{ color|itemcolor_swatch_hex }};" aria-hidden="true"></span>
@@ -119,7 +131,7 @@
                 <form method="post" action="{% url 'item:add_to_cart' item.id %}" class="mt-3" id="addToCartForm">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <input type="hidden" name="color_id"
+                    <input type="hidden" name="color_id" id="selectedColorInput"
                         value="{% if selected_color %}{{ selected_color.id }}{% endif %}">
                     {% if item.available_sizes %}
                     <input type="hidden" name="size" id="selectedSizeInput" value="">
@@ -138,13 +150,14 @@
                     </div>
                     {% endif %}
                     <button type="submit" id="addToCartButton"
-                        data-base-disabled="{% if item.is_sold or not selected_color or selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-base-disabled="{% if item.is_sold or selected_color and selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
                         {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes
                         %}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
-                        <span>
+                        <span id="addToCartButtonLabel">
                             {% if item.is_sold %}
                             غير متوفر
                             {% elif not selected_color %}
@@ -159,13 +172,14 @@
                 </form>
                 <div class="mt-3">
                     <button id="buyButton" type="button"
-                        data-base-disabled="{% if item.is_sold or not selected_color or selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-base-disabled="{% if item.is_sold or selected_color and selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-primary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %} {% if show_form %}hidden{% endif %}"
                         {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes
                         %}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
-                        <span>
+                        <span id="buyButtonLabel">
                             {% if item.is_sold %}
                             غير متوفر
                             {% elif not selected_color %}
@@ -252,22 +266,61 @@
         {% for img in all_images %}
     {
         url: '{{ img.url|escapejs }}',
-            alt: '{{ img.alt|default:item.name|escapejs }}'
+            webpUrl: '{{ img.url|prefer_webp_url|escapejs }}',
+                alt: '{{ img.alt|default:item.name|escapejs }}',
+                    colorId: {% if img.color_id %} { { img.color_id } } {% else %} null{% endif %}
     } {% if not forloop.last %}, {% endif %}
     {% empty %}
     {% if item.image_url %}
     {
         url: '{{ item.image_url|escapejs }}',
-            alt: '{{ item.name|escapejs }}'
+            webpUrl: '{{ item.image_url|prefer_webp_url|escapejs }}',
+                alt: '{{ item.name|escapejs }}',
+                    colorId: null
     }
     {% endif %}
     {% endfor %}
     ];
     let activeImageIndex = 0;
     let pendingImageSwap = null;
+    const imageCache = new Map();
+    const colorToImageIndex = new Map();
+    const fallbackImageData =
+        'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22960%22 height=%221010%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23e5e5e5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23737373%22 font-family=%22Arial%22 font-size=%2230%22>Image unavailable</text></svg>';
 
-    function updateThumbnailState(activeIndex) {
-        const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
+    function cacheImage(url, status, promise = null) {
+        imageCache.set(url, { status, promise });
+    }
+
+    function preloadImage(url) {
+        if (!url) return Promise.reject(new Error('missing image url'));
+        const cached = imageCache.get(url);
+        if (cached?.status === 'loaded') return Promise.resolve(url);
+        if (cached?.status === 'loading' && cached.promise) return cached.promise;
+        if (cached?.status === 'failed') return Promise.reject(new Error('failed image preload'));
+
+        const promise = new Promise((resolve, reject) => {
+            const img = new Image();
+            img.decoding = 'async';
+            img.onload = () => {
+                cacheImage(url, 'loaded');
+                resolve(url);
+            };
+            img.onerror = () => {
+                cacheImage(url, 'failed');
+                reject(new Error('failed image preload'));
+            };
+            img.src = url;
+        });
+        cacheImage(url, 'loading', promise);
+        return promise;
+    }
+
+    function preferredImageUrl(imageData) {
+        return imageData.resolvedUrl || imageData.url;
+    }
+
+    function updateThumbnailState(activeIndex, thumbnails) {
         thumbnails.forEach((thumb, index) => {
             thumb.classList.toggle('bg-neutral-800', index === activeIndex);
             thumb.classList.toggle('scale-110', index === activeIndex);
@@ -278,14 +331,20 @@
         });
     }
 
-    function setImageByIndex(index, options = {}) {
+    function setMainImageLoading(loaderEl, isLoading) {
+        if (!loaderEl) return;
+        loaderEl.classList.toggle('hidden', !isLoading);
+        loaderEl.classList.toggle('flex', !!isLoading);
+    }
+
+    function setImageByIndex(index, state, options = {}) {
         const { animate = true } = options;
-        const mainImage = document.getElementById('mainImage');
-        if (!mainImage || !productImages.length) return;
+        if (!state.mainImage || !productImages.length) return;
 
         const boundedIndex = (index + productImages.length) % productImages.length;
         activeImageIndex = boundedIndex;
         const nextImage = productImages[boundedIndex];
+        const nextUrl = preferredImageUrl(nextImage);
 
         if (pendingImageSwap) {
             window.clearTimeout(pendingImageSwap);
@@ -293,37 +352,131 @@
         }
 
         const applyImage = () => {
-            mainImage.src = nextImage.url;
-            mainImage.alt = nextImage.alt;
-            mainImage.classList.remove('opacity-0');
+            state.mainImage.src = nextUrl || fallbackImageData;
+            state.mainImage.srcset = nextUrl ? `${nextUrl} 480w, ${nextUrl} 768w, ${nextUrl} 1200w` : '';
+            state.mainImage.sizes = '(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 40vw';
+            state.mainImage.alt = nextImage.alt || '{{ item.name|escapejs }}';
+            state.mainImage.classList.remove('opacity-0');
         };
 
         if (animate) {
-            mainImage.classList.add('opacity-0');
+            state.mainImage.classList.add('opacity-0');
             pendingImageSwap = window.setTimeout(() => {
                 applyImage();
                 pendingImageSwap = null;
-            }, 120);
+            }, 80);
         } else {
             applyImage();
         }
 
-        updateThumbnailState(boundedIndex);
+        setMainImageLoading(state.mainImageLoader, !(nextUrl && imageCache.get(nextUrl)?.status === 'loaded'));
+        if (nextUrl) {
+            preloadImage(nextUrl).finally(() => setMainImageLoading(state.mainImageLoader, false));
+        } else {
+            setMainImageLoading(state.mainImageLoader, false);
+        }
+        updateThumbnailState(boundedIndex, state.thumbnails);
     }
 
-    function goToNextImage() {
+    function setColorState(activeColorId, state) {
+        state.colorButtons.forEach((button) => {
+            const isActive = String(button.dataset.colorId || '') === String(activeColorId || '');
+            button.classList.toggle('bg-secondary-100', isActive);
+            button.classList.toggle('border-neutral-500/40', isActive);
+            button.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+    }
+
+    function updateActionState(state) {
+        const selectedColorId = String(state.selectedColorInput?.value || '').trim();
+        const hasColor = !!selectedColorId;
+        const hasSize = !!String(state.sizeInput?.value || '').trim();
+        const sizeRequired = String(state.addToCartButton?.dataset.sizeRequired || '0') === '1';
+        const isBaseDisabled = String(state.addToCartButton?.dataset.baseDisabled || '0') === '1';
+        const disableBySize = sizeRequired && !hasSize;
+        const disableByColor = !hasColor;
+        const shouldDisable = isBaseDisabled || disableByColor || disableBySize;
+
+        if (state.addToCartButton) {
+            state.addToCartButton.disabled = shouldDisable;
+            state.addToCartButton.classList.toggle('opacity-50', shouldDisable);
+            state.addToCartButton.classList.toggle('cursor-not-allowed', shouldDisable);
+        }
+        if (state.buyButton) {
+            state.buyButton.disabled = shouldDisable;
+            state.buyButton.classList.toggle('opacity-50', shouldDisable);
+            state.buyButton.classList.toggle('cursor-not-allowed', shouldDisable);
+        }
+        if (state.purchaseSubmitButton) {
+            state.purchaseSubmitButton.disabled = isBaseDisabled || disableByColor || disableBySize;
+            state.purchaseSubmitButton.classList.toggle('opacity-50', isBaseDisabled || disableByColor || disableBySize);
+            state.purchaseSubmitButton.classList.toggle('cursor-not-allowed', isBaseDisabled || disableByColor || disableBySize);
+        }
+        if (state.addToCartButtonLabel && !isBaseDisabled) {
+            state.addToCartButtonLabel.textContent = hasColor ? 'أضف إلى السلة' : 'اختر اللون أولاً';
+        }
+        if (state.buyButtonLabel && !isBaseDisabled) {
+            state.buyButtonLabel.textContent = hasColor ? 'اطلب عبر واتساب' : 'اختر اللون أولاً';
+        }
+    }
+
+    function selectColor(colorId, state) {
+        if (!colorId) return;
+        if (state.selectedColorInput) state.selectedColorInput.value = String(colorId);
+        setColorState(colorId, state);
+
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('color', String(colorId));
+        window.history.replaceState({}, '', currentUrl.toString());
+
+        if (state.purchaseForm) {
+            state.purchaseForm.action = '{% url "item:detail" item.id %}?color=' + colorId;
+            const hiddenColorInput = state.purchaseForm.querySelector('input[name="color"]');
+            if (hiddenColorInput) hiddenColorInput.value = String(colorId);
+        }
+        const firstColorImageIndex = colorToImageIndex.get(String(colorId));
+        if (typeof firstColorImageIndex === 'number') {
+            setImageByIndex(firstColorImageIndex, state, { animate: true });
+        }
+        updateActionState(state);
+    }
+
+    function preloadProductImages(state) {
+        productImages.forEach((imageData, index) => {
+            if (imageData.colorId !== null && !colorToImageIndex.has(String(imageData.colorId))) {
+                colorToImageIndex.set(String(imageData.colorId), index);
+            }
+        });
         if (productImages.length < 2) return;
-        setImageByIndex(activeImageIndex + 1);
+        productImages.forEach((imageData) => {
+            const useWebp = imageData.webpUrl && imageData.webpUrl !== imageData.url;
+            const preferred = useWebp ? imageData.webpUrl : imageData.url;
+            preloadImage(preferred)
+                .then(() => {
+                    imageData.resolvedUrl = preferred;
+                })
+                .catch(() => preloadImage(imageData.url).then(() => {
+                    imageData.resolvedUrl = imageData.url;
+                }).catch(() => {
+                    imageData.resolvedUrl = '';
+                }));
+        });
+        if ('IntersectionObserver' in window && state.carousel) {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    productImages.forEach((imageData) => {
+                        const targetUrl = preferredImageUrl(imageData);
+                        if (targetUrl) preloadImage(targetUrl).catch(() => { });
+                    });
+                    observer.disconnect();
+                }
+            }, { rootMargin: '300px' });
+            observer.observe(state.carousel);
+        }
     }
 
-    function goToPreviousImage() {
-        if (productImages.length < 2) return;
-        setImageByIndex(activeImageIndex - 1);
-    }
-
-    function initImageNavigation() {
-        const carousel = document.getElementById('imageCarousel');
-        if (!carousel || productImages.length < 2) return;
+    function initImageNavigation(state) {
+        if (!state.carousel || productImages.length < 2) return;
 
         const swipeThreshold = 48;
         const axisLockThreshold = 10;
@@ -334,7 +487,7 @@
         let isDragging = false;
         let gestureAxis = null;
 
-        carousel.style.touchAction = 'pan-y';
+        state.carousel.style.touchAction = 'pan-y';
 
         const onPointerDown = (event) => {
             if (event.button !== undefined && event.button !== 0) return;
@@ -364,40 +517,74 @@
             isDragging = false;
             if (gestureAxis === 'x' && Math.abs(deltaX) >= swipeThreshold) {
                 const direction = deltaX < 0 ? 1 : -1;
-                setImageByIndex(activeImageIndex + direction);
+                setImageByIndex(activeImageIndex + direction, state);
             }
             gestureAxis = null;
         };
 
-        const thumbnails = document.querySelectorAll('#imageGallery .image-thumbnail');
-        thumbnails.forEach((thumb, index) => {
-            thumb.addEventListener('click', () => setImageByIndex(index));
+        state.thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => setImageByIndex(index, state));
         });
 
-        const prevButton = carousel.querySelector('[data-carousel-prev]');
-        const nextButton = carousel.querySelector('[data-carousel-next]');
-        if (prevButton) prevButton.addEventListener('click', goToPreviousImage);
-        if (nextButton) nextButton.addEventListener('click', goToNextImage);
+        const prevButton = state.carousel.querySelector('[data-carousel-prev]');
+        const nextButton = state.carousel.querySelector('[data-carousel-next]');
+        if (prevButton) prevButton.addEventListener('click', () => setImageByIndex(activeImageIndex - 1, state));
+        if (nextButton) nextButton.addEventListener('click', () => setImageByIndex(activeImageIndex + 1, state));
 
-        carousel.addEventListener('pointerdown', onPointerDown);
-        carousel.addEventListener('pointermove', onPointerMove, { passive: false });
+        state.carousel.addEventListener('pointerdown', onPointerDown);
+        state.carousel.addEventListener('pointermove', onPointerMove, { passive: false });
         window.addEventListener('pointerup', onPointerEnd);
         window.addEventListener('pointercancel', onPointerEnd);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        if (productImages.length) {
-            setImageByIndex(0, { animate: false });
-            initImageNavigation();
+        const state = {
+            carousel: document.getElementById('imageCarousel'),
+            mainImage: document.getElementById('mainImage'),
+            mainImageLoader: document.getElementById('mainImageLoader'),
+            thumbnails: Array.from(document.querySelectorAll('#imageGallery .image-thumbnail')),
+            colorButtons: Array.from(document.querySelectorAll('[data-color-option]')),
+            selectedColorInput: document.getElementById('selectedColorInput'),
+            addToCartButton: document.getElementById('addToCartButton'),
+            addToCartButtonLabel: document.getElementById('addToCartButtonLabel'),
+            buyButton: document.getElementById('buyButton'),
+            buyButtonLabel: document.getElementById('buyButtonLabel'),
+            purchaseForm: document.getElementById('purchaseForm'),
+            purchaseSubmitButton: document.getElementById('purchaseSubmitButton'),
+            sizeInput: document.getElementById('selectedSizeInput')
+        };
+
+        if (state.mainImage) {
+            state.mainImage.addEventListener('load', () => setMainImageLoading(state.mainImageLoader, false));
+            state.mainImage.addEventListener('error', () => {
+                state.mainImage.src = fallbackImageData;
+                state.mainImage.srcset = '';
+                setMainImageLoading(state.mainImageLoader, false);
+            });
         }
 
-        const buyButton = document.getElementById('buyButton');
-        if (buyButton) {
-            buyButton.addEventListener('click', function () {
+        if (productImages.length) {
+            setImageByIndex(0, state, { animate: false });
+            initImageNavigation(state);
+            preloadProductImages(state);
+        }
+
+        state.colorButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                const colorId = button.dataset.colorId;
+                if (!colorId) return;
+                selectColor(colorId, state);
+            });
+        });
+        updateActionState(state);
+
+        if (state.buyButton) {
+            state.buyButton.addEventListener('click', function () {
                 const form = document.getElementById('requestForm');
                 if (!form) return;
                 form.classList.remove('hidden');
-                buyButton.classList.add('hidden');
+                state.buyButton.classList.add('hidden');
                 form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
         }
@@ -470,7 +657,7 @@
         const whatsappSizeInput = document.getElementById('selectedWhatsappSizeInput');
 
         if (sizeSelector && sizeInput && addToCartButton) {
-            const baseDisabled = String(addToCartButton.dataset.baseDisabled || '0') === '1';
+            const baseDisabled = String(addToCartButton.dataset.itemSold || '0') === '1';
             const sizeRequired = String(addToCartButton.dataset.sizeRequired || '0') === '1';
             const sizeButtons = Array.from(sizeSelector.querySelectorAll('button[data-size]'));
 
@@ -494,10 +681,10 @@
             };
 
             const setWhatsappDisabledState = (disabled) => {
-                if (buyButton) {
-                    buyButton.disabled = !!disabled;
-                    buyButton.classList.toggle('opacity-50', !!disabled);
-                    buyButton.classList.toggle('cursor-not-allowed', !!disabled);
+                if (state.buyButton) {
+                    state.buyButton.disabled = !!disabled;
+                    state.buyButton.classList.toggle('opacity-50', !!disabled);
+                    state.buyButton.classList.toggle('cursor-not-allowed', !!disabled);
                 }
                 if (purchaseSubmitButton) {
                     purchaseSubmitButton.disabled = !!disabled;
@@ -512,15 +699,19 @@
                     whatsappSizeInput.value = hasSize ? sizeInput.value : '';
                 }
                 if (baseDisabled) {
+                    setDisabledState(true);
                     setWhatsappDisabledState(true);
                     return;
                 }
                 if (!sizeRequired) {
+                    setDisabledState(false);
                     setWhatsappDisabledState(false);
+                    updateActionState(state);
                     return;
                 }
                 setDisabledState(!hasSize);
                 setWhatsappDisabledState(!hasSize);
+                updateActionState(state);
                 if (sizeValidation) {
                     sizeValidation.classList.toggle('hidden', hasSize);
                 }
