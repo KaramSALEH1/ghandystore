@@ -48,7 +48,7 @@ class ItemAdmin(admin.ModelAdmin):
     inlines = [ItemColorInline]
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'name', 'description', 'price', 'image')
+            'fields': ('category', 'name', 'description', 'price', 'sizes', 'image')
         }),
         ('Status', {
             'fields': ('is_sold',)

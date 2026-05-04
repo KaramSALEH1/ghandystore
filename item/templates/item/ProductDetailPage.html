@@ -102,14 +102,33 @@
         <div class="lg:col-span-3">
             <div class="card-soft p-4 sm:p-5">
 
-                <form method="post" action="{% url 'item:add_to_cart' item.id %}" class="mt-3">
+                <form method="post" action="{% url 'item:add_to_cart' item.id %}" class="mt-3" id="addToCartForm">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <input type="hidden" name="color_id"
                         value="{% if selected_color %}{{ selected_color.id }}{% endif %}">
+                    {% if item.available_sizes %}
+                    <input type="hidden" name="size" id="selectedSizeInput" value="">
+                    <div class="mb-4">
+                        <div class="label-micro mb-2">Size</div>
+                        <div class="flex flex-wrap gap-2" id="sizeSelector">
+                            {% for size in item.available_sizes %}
+                            <button type="button"
+                                class="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-800 transition hover:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-400/40"
+                                data-size="{{ size }}" aria-pressed="false">
+                                {{ size }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <p id="sizeValidation" class="mt-2 text-xs text-red-600">Please select a size</p>
+                    </div>
+                    {% endif %}
                     <button type="submit"
-                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out %}opacity-50 cursor-not-allowed{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out %}disabled{% endif %}
+                        id="addToCartButton"
+                        data-base-disabled="{% if item.is_sold or not selected_color or selected_color.is_sold_out %}1{% else %}0{% endif %}"
+                        data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
+                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}disabled{% endif %}
                         dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span>
@@ -379,6 +398,58 @@
                     }
                 }
             });
+        }
+
+        const sizeSelector = document.getElementById('sizeSelector');
+        const sizeInput = document.getElementById('selectedSizeInput');
+        const sizeValidation = document.getElementById('sizeValidation');
+        const addToCartButton = document.getElementById('addToCartButton');
+
+        if (sizeSelector && sizeInput && addToCartButton) {
+            const baseDisabled = String(addToCartButton.dataset.baseDisabled || '0') === '1';
+            const sizeRequired = String(addToCartButton.dataset.sizeRequired || '0') === '1';
+            const sizeButtons = Array.from(sizeSelector.querySelectorAll('button[data-size]'));
+
+            const setActiveSize = (selected) => {
+                sizeButtons.forEach((btn) => {
+                    const isActive = String(btn.dataset.size || '') === String(selected || '');
+                    btn.classList.toggle('bg-neutral-900', isActive);
+                    btn.classList.toggle('border-neutral-900', isActive);
+                    btn.classList.toggle('text-white', isActive);
+                    btn.classList.toggle('bg-white', !isActive);
+                    btn.classList.toggle('border-neutral-300', !isActive);
+                    btn.classList.toggle('text-neutral-800', !isActive);
+                    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+            };
+
+            const setDisabledState = (disabled) => {
+                addToCartButton.disabled = !!disabled;
+                addToCartButton.classList.toggle('opacity-50', !!disabled);
+                addToCartButton.classList.toggle('cursor-not-allowed', !!disabled);
+            };
+
+            const updateSizeState = () => {
+                if (baseDisabled) return;
+                if (!sizeRequired) return;
+                const hasSize = !!String(sizeInput.value || '').trim();
+                setDisabledState(!hasSize);
+                if (sizeValidation) {
+                    sizeValidation.classList.toggle('hidden', hasSize);
+                }
+            };
+
+            sizeButtons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const size = String(btn.dataset.size || '').trim();
+                    sizeInput.value = size;
+                    setActiveSize(size);
+                    updateSizeState();
+                });
+            });
+
+            // Initial state: required sizes disable Add to Cart until one is selected.
+            updateSizeState();
         }
     });
 </script>

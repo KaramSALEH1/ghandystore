@@ -40,7 +40,19 @@ def add_to_cart(request, item_id):
         messages.error(request, 'اللون المختار غير متوفر.')
         return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 
-    cart.add(item=item, color=color)
+    size = (request.POST.get('size') or '').strip().upper()
+    available_sizes = getattr(item, 'available_sizes', None) or []
+    if available_sizes:
+        if not size:
+            messages.error(request, 'Please select a size')
+            return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+        if size not in available_sizes:
+            messages.error(request, 'Selected size is not available for this product.')
+            return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
+    else:
+        size = None
+
+    cart.add(item=item, color=color, size=size)
     messages.success(request, 'تمت إضافة المنتج إلى السلة.')
     return redirect(request.POST.get('next') or request.META.get('HTTP_REFERER', '/'))
 

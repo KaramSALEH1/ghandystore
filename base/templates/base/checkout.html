@@ -125,6 +125,12 @@
                                     </span>
                                 </p>
                                 {% endif %}
+                                {% if cart_item.size %}
+                                <p class="mt-1 text-sm text-neutral-700">
+                                    <span>Size:</span>
+                                    <span>{{ cart_item.size }}</span>
+                                </p>
+                                {% endif %}
                                 <p class="text-sm text-neutral-600 font-arabic" dir="rtl">
                                     <span>السعر:</span>
                                     <span>
@@ -307,6 +313,7 @@
             {% for key, value in global_cart.cart.items %}
             lines.push("المنتج: {{ value.name|escapejs }}");
             {% if value.color_name %} lines.push("اللون: {{ value.color_name|escapejs }}"); {% endif %}
+            {% if value.size %} lines.push("Size: {{ value.size|escapejs }}"); {% endif %}
             lines.push("الكمية: {{ value.qty }}");
             lines.push("سعر القطعة: {{ value.price|escapejs }} ل.س");
             lines.push("");

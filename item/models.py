@@ -11,6 +11,23 @@ def validate_optional_hex(value: str) -> None:
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", value):
         raise ValidationError("Enter a valid hex color like #RRGGBB.")
 
+ALLOWED_SIZES = ("S", "M", "L", "XL", "XXL")
+
+
+def validate_sizes(value) -> None:
+    """
+    Optional list of sizes. Stored as JSON for simplicity.
+    Accepts: None, [] or ["S", "M", ...] (subset of ALLOWED_SIZES).
+    """
+    if value in (None, ""):
+        return
+    if not isinstance(value, list):
+        raise ValidationError("Sizes must be a list.")
+    for size in value:
+        if size not in ALLOWED_SIZES:
+            raise ValidationError(f"Invalid size '{size}'. Allowed: {', '.join(ALLOWED_SIZES)}.")
+
+
 class Category(models.Model):
     name = models.CharField(max_length=255)
 
@@ -26,6 +43,12 @@ class Item(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     price = models.FloatField()
+    sizes = models.JSONField(
+        blank=True,
+        null=True,
+        validators=[validate_sizes],
+        help_text="Optional list of sizes, e.g. [\"S\", \"M\", \"L\"]. Leave empty for no sizes.",
+    )
     accent_hex = models.CharField(
         max_length=7,
         blank=True,
@@ -50,6 +73,10 @@ class Item(models.Model):
     @property
     def is_out_of_stock(self):
         return bool(self.is_sold)
+
+    @property
+    def available_sizes(self):
+        return self.sizes or []
 
     def __str__(self):
         return self.name

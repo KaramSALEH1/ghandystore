@@ -38,6 +38,9 @@
                     {% if cart_item.color_name %}
                     <p class="mt-1 text-sm text-neutral-700 font-arabic" dir="rtl">اللون: {{ cart_item.color_name }}</p>
                     {% endif %}
+                    {% if cart_item.size %}
+                    <p class="mt-1 text-sm text-neutral-700">Size: {{ cart_item.size }}</p>
+                    {% endif %}
                     <p class="text-sm text-neutral-600 font-arabic" dir="rtl">السعر: {{ cart_item.price|floatformat:2 }}
                         ل.س</p>
 

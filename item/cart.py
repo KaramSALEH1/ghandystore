@@ -10,18 +10,28 @@ class Cart:
             cart = self.session['session_cart'] = {}
         self.cart = cart
 
-    def _make_line_id(self, item_id: int, color_id: int) -> str:
+    def _make_line_id(self, item_id: int, color_id: int, size: str | None = None) -> str:
+        if size:
+            return f"{item_id}:{color_id}:{size}"
         return f"{item_id}:{color_id}"
 
-    def add(self, item, color: ItemColor):
+    def _parse_line_id(self, line_id: str):
+        parts = str(line_id).split(":")
+        item_id = parts[0] if len(parts) >= 1 else None
+        color_id = parts[1] if len(parts) >= 2 else None
+        size = ":".join(parts[2:]) if len(parts) >= 3 else None
+        return item_id, color_id, size
+
+    def add(self, item, color: ItemColor, size: str | None = None):
         if not color:
             return
-        line_id = self._make_line_id(item.id, color.id)
+        line_id = self._make_line_id(item.id, color.id, size=size)
         if line_id not in self.cart:
             self.cart[line_id] = {
                 'item_id': str(item.id),
                 'color_id': str(color.id),
                 'color_name': color.name,
+                'size': (str(size) if size else ''),
                 'price': str(item.price),
                 'qty': 1,
                 'name': item.name,
@@ -66,17 +76,19 @@ class Cart:
 
             item_id = data.get('item_id')
             color_id = data.get('color_id')
+            size = data.get('size') or None
 
             if not item_id:
-                if ':' in str(line_id):
-                    item_id = str(line_id).split(':', 1)[0]
-                    color_id = color_id or str(line_id).split(':', 1)[1]
-                else:
-                    item_id = str(line_id)
+                parsed_item_id, parsed_color_id, parsed_size = self._parse_line_id(line_id)
+                item_id = parsed_item_id
+                color_id = color_id or parsed_color_id
+                size = size or parsed_size
 
                 data['item_id'] = str(item_id)
                 if color_id:
                     data['color_id'] = str(color_id)
+                if size is not None:
+                    data['size'] = str(size)
                 self.session.modified = True
 
             try:
@@ -105,6 +117,7 @@ class Cart:
                 'name': name,
                 'color_id': color.id if color else None,
                 'color_name': color.name if color else (data.get('color_name', '') or ''),
+                'size': size or '',
                 'price': price,
                 'qty': qty,
                 'line_total': price * qty,
