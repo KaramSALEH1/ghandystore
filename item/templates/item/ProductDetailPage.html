@@ -155,7 +155,7 @@
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
                         {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes
-                        %}disabled{% endif %} dir="rtl">
+                        %}disabled{% endblock %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span id="addToCartButtonLabel">
                             {% if item.is_sold %}
