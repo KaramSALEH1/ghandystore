@@ -70,20 +70,21 @@ WSGI_APPLICATION = 'ghandyStore.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ghandystore',
-        'USER': 'JanaHero',
-        'PASSWORD': 'StrongPassword123',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
+         'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'ghandystore1',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('MYSQL_PORT', '3306'),
         # 'ENGINE': 'django.db.backends.mysql',
         # 'NAME': 'ghandystore',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        # 'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
-        # 'PORT': os.environ.get('MYSQL_PORT', '3306'),
+        # 'USER': 'JanaHero',
+        # 'PASSWORD': 'StrongPassword123',
+        # 'HOST': 'localhost',
+        # 'PORT': '3306',
+    }
+}
+       
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

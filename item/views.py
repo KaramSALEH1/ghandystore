@@ -120,14 +120,13 @@ def detail(request, pk):
         except ItemColor.DoesNotExist:
             selected_color = None
     
-    # Collect all images: main item image first, then all color images
-    # If a color is selected, put that color's images first
+    # Collect all images based on selected color
     all_images = []
-    selected_color_images = []
     item_image_url = _safe_image_url(item.image)
-    
-    # If color is selected, collect its images first
+
     if selected_color:
+        # When color is selected: show that color's images first, then main image, then others
+        selected_color_images = []
         for color_image in selected_color.images.all():
             color_url = _safe_image_url(color_image.image)
             if color_url:
@@ -138,23 +137,44 @@ def detail(request, pk):
                     'color_id': selected_color.id,
                     'alt': f"{item.name} - {selected_color.name}"
                 })
-    
-    # Add main item image (only if no color selected or color has no images)
-    if item_image_url and (not selected_color or not selected_color_images):
-        all_images.append({
-            'url': item_image_url,
-            'type': 'main',
-            'color': None,
-            'color_id': None,
-            'alt': f"{item.name} - Main Image"
-        })
-    
-    # Add selected color images first if they exist
-    all_images.extend(selected_color_images)
-    
-    # Add other color images (excluding selected color if it was added above)
-    for color in colors:
-        if color != selected_color:
+        all_images.extend(selected_color_images)
+
+        # Add main item image if no color images
+        if not selected_color_images and item_image_url:
+            all_images.append({
+                'url': item_image_url,
+                'type': 'main',
+                'color': None,
+                'color_id': None,
+                'alt': f"{item.name} - Main Image"
+            })
+
+        # Add other colors' images
+        for color in colors:
+            if color != selected_color:
+                for color_image in color.images.all():
+                    color_url = _safe_image_url(color_image.image)
+                    if color_url:
+                        all_images.append({
+                            'url': color_url,
+                            'type': 'color',
+                            'color': color,
+                            'color_id': color.id,
+                            'alt': f"{item.name} - {color.name}"
+                        })
+    else:
+        # No color selected: main image first, then all color images (carousel)
+        if item_image_url:
+            all_images.append({
+                'url': item_image_url,
+                'type': 'main',
+                'color': None,
+                'color_id': None,
+                'alt': f"{item.name} - Main Image"
+            })
+
+        # Add all color images for carousel
+        for color in colors:
             for color_image in color.images.all():
                 color_url = _safe_image_url(color_image.image)
                 if color_url:
@@ -165,6 +185,30 @@ def detail(request, pk):
                         'color_id': color.id,
                         'alt': f"{item.name} - {color.name}"
                     })
+
+    # Allow server-side image selection via URL param
+    selected_image_index = 0
+    image_index_param = request.GET.get('image')
+    if image_index_param is not None:
+        try:
+            selected_image_index = int(image_index_param)
+        except (ValueError, TypeError):
+            selected_image_index = 0
+
+    if selected_image_index < 0 or selected_image_index >= len(all_images):
+        selected_image_index = 0
+
+    main_image = all_images[selected_image_index] if all_images else {
+        'url': item_image_url,
+        'alt': item.name,
+        'type': 'main',
+        'color': None,
+        'color_id': None
+    }
+
+    image_count = len(all_images)
+    prev_image_index = (selected_image_index - 1) % image_count if image_count else 0
+    next_image_index = (selected_image_index + 1) % image_count if image_count else 0
 
     form = ItemRequestForm(item=item)
     show_form = False
@@ -257,44 +301,9 @@ def detail(request, pk):
         else:
             # Form has errors, show the form
             show_form = True
-            # Preserve selected color in form initial data and ensure it's in the context
+            # Preserve selected color in form initial data
             if selected_color:
                 form.fields['color'].initial = selected_color.id
-                # Also rebuild images list to show selected color first
-                all_images = []
-                selected_color_images = []
-                if selected_color:
-                    for color_image in selected_color.images.all():
-                        color_url = _safe_image_url(color_image.image)
-                        if color_url:
-                            selected_color_images.append({
-                                'url': color_url,
-                                'type': 'color',
-                                'color': selected_color,
-                                'color_id': selected_color.id,
-                                'alt': f"{item.name} - {selected_color.name}"
-                            })
-                if item_image_url and not selected_color_images:
-                    all_images.append({
-                        'url': item_image_url,
-                        'type': 'main',
-                        'color': None,
-                        'color_id': None,
-                        'alt': f"{item.name} - Main Image"
-                    })
-                all_images.extend(selected_color_images)
-                for color in colors:
-                    if color != selected_color:
-                        for color_image in color.images.all():
-                            color_url = _safe_image_url(color_image.image)
-                            if color_url:
-                                all_images.append({
-                                    'url': color_url,
-                                    'type': 'color',
-                                    'color': color,
-                                    'color_id': color.id,
-                                    'alt': f"{item.name} - {color.name}"
-                                })
 
     return render(request, 'item/ProductDetailPage.html', {
         'item': item,
@@ -302,6 +311,10 @@ def detail(request, pk):
         'colors': colors,
         'selected_color': selected_color,
         'all_images': all_images,
+        'main_image': main_image,
+        'selected_image_index': selected_image_index,
+        'prev_image_index': prev_image_index,
+        'next_image_index': next_image_index,
         'form': form,
         'show_form': show_form
     })

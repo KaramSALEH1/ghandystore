@@ -9,11 +9,11 @@
         <div class="lg:col-span-5">
             <div class="card-soft p-4 sm:p-5">
                 <div id="imageCarousel"
-                    class="media-frame image-carousel relative aspect-[0.95/1] select-none overflow-hidden"
+                    class="media-frame image-carousel relative aspect-[0.95/1] select-none overflow-hidden group"
                     style="background-color: {{ item|item_accent_surface }};">
                     {% if all_images %}
-                    <img id="mainImage" src="{{ all_images.0.url }}" alt="{{ all_images.0.alt }}"
-                        srcset="{{ all_images.0.url|responsive_srcset }}" sizes="{{ ''|product_detail_sizes }}"
+                    <img id="mainImage" src="{{ main_image.url }}" alt="{{ main_image.alt }}"
+                        srcset="{{ main_image.url|responsive_srcset }}" sizes="{{ ''|product_detail_sizes }}"
                         loading="eager" decoding="async" fetchpriority="high" width="960" height="1010"
                         class="h-full w-full object-contain transition-opacity duration-200 ease-out" draggable="false">
                     {% elif item.image_url %}
@@ -22,7 +22,7 @@
                         loading="eager" decoding="async" fetchpriority="high" width="960" height="1010"
                         class="h-full w-full object-contain transition-opacity duration-200 ease-out" draggable="false">
                     {% else %}
-                    <div class="flex h-full w-full items-center justify-center rounded-xl2 bg-neutral-200/60">
+                    <div class="flex h-full w-full items-center justify-center rounded-xl bg-neutral-200/60">
                         <p class="text-neutral-500 font-arabic" dir="rtl">لا توجد صورة</p>
                     </div>
                     {% endif %}
@@ -33,26 +33,31 @@
                             class="h-7 w-7 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-700"></span>
                     </div>
                     {% if all_images|length > 1 %}
-                    <button type="button"
-                        class="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 hover:bg-white transition"
+                    <a href="{% url 'item:detail' item.id %}?{% if selected_color %}color={{ selected_color.id }}&{% endif %}image={{ prev_image_index }}"
+                        class="flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 transition-all duration-150 hover:bg-white hover:shadow-md hover:scale-105"
                         data-carousel-prev aria-label="الصورة السابقة">
-                        <span aria-hidden="true">‹</span>
-                    </button>
-                    <button type="button"
-                        class="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 hover:bg-white transition"
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </a>
+                    <a href="{% url 'item:detail' item.id %}?{% if selected_color %}color={{ selected_color.id }}&{% endif %}image={{ next_image_index }}"
+                        class="flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-800 shadow-sm border border-neutral-200 transition-all duration-150 hover:bg-white hover:shadow-md hover:scale-105"
                         data-carousel-next aria-label="الصورة التالية">
-                        <span aria-hidden="true">›</span>
-                    </button>
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
                     {% endif %}
                 </div>
 
                 {% if all_images|length > 1 %}
                 <div class="mt-3 flex justify-center">
-                    <div class="flex overflow-x-auto gap-2 pb-1 scrollbar-hide" id="imageGallery">
-                        {% for img in all_images %}
-                        <button type="button"
-                            class="image-thumbnail h-2.5 w-2.5 rounded-full transition-all duration-200 {% if forloop.first %}bg-neutral-800 scale-110 ring-2 ring-neutral-400/60{% else %}bg-neutral-300{% endif %}"
-                            data-image-index="{{ forloop.counter0 }}" aria-label="اختر صورة المنتج"></button>
+                    <div class="flex gap-3 pb-1" id="imageGallery">
+                        {% for image in all_images %}
+                        <a href="?{% if selected_color %}color={{ selected_color.id }}&{% endif %}image={{ forloop.counter0 }}"
+                            class="image-thumbnail {% if forloop.counter0 == selected_image_index %}active{% else %}inactive{% endif %}"
+                            aria-label="اختر الصورة {{ forloop.counter }}"
+                            data-image-index="{{ forloop.counter0 }}"></a>
                         {% endfor %}
                     </div>
                 </div>
@@ -259,473 +264,155 @@
         border-color: #d4d4d4;
         color: #262626;
     }
+
+    /* Smooth carousel transitions */
+    #mainImage {
+        transition: opacity 200ms ease-out;
+    }
+
+    #imageGallery {
+        scroll-behavior: smooth;
+    }
+
+    /* Force carousel button visibility and styling */
+    [data-carousel-prev],
+    [data-carousel-next] {
+        display: flex !important;
+        opacity: 1;
+        transition: all 150ms ease-out;
+        z-index: 10;
+        cursor: pointer;
+    }
+
+    [data-carousel-prev]:hover,
+    [data-carousel-next]:hover {
+        background-color: #ffffff !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        transform: scale(1.05);
+    }
+
+    /* Thumbnail styles with smooth transitions */
+    .image-thumbnail {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 200ms ease-out;
+        border: none;
+        outline: none;
+        margin: 0 3px;
+        display: inline-block;
+    }
+
+    .image-thumbnail.active {
+        background-color: #171717;
+        transform: scale(1.2);
+        box-shadow: 0 0 0 2px rgba(75, 85, 99, 0.6);
+    }
+
+    .image-thumbnail.inactive {
+        background-color: #d1d5db;
+        border: 1px solid #9ca3af;
+    }
+
+    .image-thumbnail:hover {
+        transform: scale(1.4);
+        background-color: #9ca3af;
+    }
+
+    .image-thumbnail.active:hover {
+        transform: scale(1.5);
+        background-color: #171717;
+    }
+
+    /* Hide navigation when only one image */
+    .image-carousel.single-image [data-carousel-prev],
+    .image-carousel.single-image [data-carousel-next] {
+        display: none !important;
+    }
+
+    .image-carousel.single-image+.flex .flex {
+        display: none !important;
+    }
 </style>
 
 <script>
-    const productImages = [
-        {% for img in all_images %}
-    {
-        url: '{{ img.url|escapejs }}',
-            webpUrl: '{{ img.url|prefer_webp_url|escapejs }}',
-                alt: '{{ img.alt|default:item.name|escapejs }}',
-                    colorId: {% if img.color_id %} { { img.color_id } } {% else %} null{% endif %}
-    } {% if not forloop.last %}, {% endif %}
-    {% empty %}
-    {% if item.image_url %}
-    {
-        url: '{{ item.image_url|escapejs }}',
-            webpUrl: '{{ item.image_url|prefer_webp_url|escapejs }}',
-                alt: '{{ item.name|escapejs }}',
-                    colorId: null
-    }
-    {% endif %}
-    {% endfor %}
-    ];
+    // ============================================
+    // Server-side image carousel with swipe gestures
+    // ============================================
 
-    let activeImageIndex = 0;
-    let pendingImageSwap = null;
-    const imageCache = new Map();
-    const colorToImageIndex = new Map();
-    const fallbackImageData = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1010"><rect width="100%" height="100%" fill="%23e5e5e5"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23737373" font-family="Arial" font-size="30">Image unavailable</text></svg>';
+    const selectedColorId = '{{ selected_color.id|default_if_none:"" }}';
+    const selectedImageIndex = {{ selected_image_index|default:"0"}};
+    const imageCount = {{ all_images| length |default:0}};
+    const detailPath = '{% url "item:detail" item.id %}';
 
-    function cacheImage(url, status, promise = null) {
-        imageCache.set(url, { status, promise });
+    function buildDetailUrl(imageIndex) {
+        const params = new URLSearchParams();
+        if (selectedColorId) {
+            params.set('color', selectedColorId);
+        }
+        params.set('image', imageIndex);
+        return `${detailPath}?${params.toString()}`;
     }
 
-    function preloadImage(url) {
-        if (!url) return Promise.reject(new Error('missing image url'));
-        const cached = imageCache.get(url);
-        if (cached && cached.status === 'loaded') return Promise.resolve(url);
-        if (cached && cached.status === 'loading' && cached.promise) return cached.promise;
-        if (cached && cached.status === 'failed') return Promise.reject(new Error('failed image preload'));
-
-        const promise = new Promise((resolve, reject) => {
-            const img = new Image();
-            img.decoding = 'async';
-            img.onload = () => {
-                cacheImage(url, 'loaded');
-                resolve(url);
-            };
-            img.onerror = () => {
-                cacheImage(url, 'failed');
-                reject(new Error('failed image preload'));
-            };
-            img.src = url;
-        });
-        cacheImage(url, 'loading', promise);
-        return promise;
-    }
-
-    function preferredImageUrl(imageData) {
-        return imageData.resolvedUrl || imageData.url;
-    }
-
-    function updateThumbnailState(activeIndex, thumbnails) {
-        thumbnails.forEach((thumb, index) => {
-            thumb.classList.toggle('bg-neutral-800', index === activeIndex);
-            thumb.classList.toggle('scale-110', index === activeIndex);
-            thumb.classList.toggle('ring-2', index === activeIndex);
-            thumb.classList.toggle('ring-neutral-400/60', index === activeIndex);
-            thumb.classList.toggle('bg-neutral-300', index !== activeIndex);
-            thumb.setAttribute('aria-current', index === activeIndex ? 'true' : 'false');
-        });
-    }
-
-    function setMainImageLoading(loaderEl, isLoading) {
-        if (!loaderEl) return;
-        loaderEl.classList.toggle('hidden', !isLoading);
-        loaderEl.classList.toggle('flex', !!isLoading);
-    }
-
-    function setImageByIndex(index, state, options = {}) {
-        const { animate = true } = options;
-        if (!state.mainImage || !productImages.length) return;
-
-        const boundedIndex = (index + productImages.length) % productImages.length;
-        activeImageIndex = boundedIndex;
-        const nextImage = productImages[boundedIndex];
-        const nextUrl = preferredImageUrl(nextImage);
-
-        if (pendingImageSwap) {
-            window.clearTimeout(pendingImageSwap);
-            pendingImageSwap = null;
-        }
-
-        const applyImage = () => {
-            state.mainImage.src = nextUrl || fallbackImageData;
-            state.mainImage.srcset = nextUrl ? nextUrl + ' 480w, ' + nextUrl + ' 768w, ' + nextUrl + ' 1200w' : '';
-            state.mainImage.sizes = '(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 40vw';
-            state.mainImage.alt = nextImage.alt || '{{ item.name|escapejs }}';
-            state.mainImage.classList.remove('opacity-0');
-        };
-
-        if (animate) {
-            state.mainImage.classList.add('opacity-0');
-            pendingImageSwap = window.setTimeout(() => {
-                applyImage();
-                pendingImageSwap = null;
-            }, 80);
-        } else {
-            applyImage();
-        }
-
-        setMainImageLoading(state.mainImageLoader, !(nextUrl && imageCache.get(nextUrl) && imageCache.get(nextUrl).status === 'loaded'));
-        if (nextUrl) {
-            preloadImage(nextUrl).finally(() => setMainImageLoading(state.mainImageLoader, false));
-        } else {
-            setMainImageLoading(state.mainImageLoader, false);
-        }
-        updateThumbnailState(boundedIndex, state.thumbnails);
-    }
-
-    function setColorState(activeColorId, state) {
-        state.colorButtons.forEach((button) => {
-            const isActive = String(button.dataset.colorId || '') === String(activeColorId || '');
-            button.classList.toggle('bg-secondary-100', isActive);
-            button.classList.toggle('border-neutral-500/40', isActive);
-            button.setAttribute('aria-current', isActive ? 'true' : 'false');
-        });
-    }
-
-    function updateActionState(state) {
-        const selectedColorId = String(state.selectedColorInput && state.selectedColorInput.value || '').trim();
-        const hasColor = !!selectedColorId;
-        const hasSize = !state.sizeInput || !!String(state.sizeInput.value || '').trim();
-        const sizeRequired = state.addToCartButton && String(state.addToCartButton.dataset.sizeRequired || '0') === '1';
-        const isBaseDisabled = state.addToCartButton && String(state.addToCartButton.dataset.baseDisabled || '0') === '1';
-        const disableBySize = sizeRequired && !hasSize;
-        const disableByColor = !hasColor;
-        const shouldDisable = isBaseDisabled || disableByColor || disableBySize;
-
-        if (state.addToCartButton) {
-            state.addToCartButton.disabled = shouldDisable;
-            state.addToCartButton.classList.toggle('opacity-50', shouldDisable);
-            state.addToCartButton.classList.toggle('cursor-not-allowed', shouldDisable);
-        }
-        if (state.buyButton) {
-            state.buyButton.disabled = shouldDisable;
-            state.buyButton.classList.toggle('opacity-50', shouldDisable);
-            state.buyButton.classList.toggle('cursor-not-allowed', shouldDisable);
-        }
-        if (state.purchaseSubmitButton) {
-            state.purchaseSubmitButton.disabled = isBaseDisabled || disableByColor || disableBySize;
-            state.purchaseSubmitButton.classList.toggle('opacity-50', isBaseDisabled || disableByColor || disableBySize);
-            state.purchaseSubmitButton.classList.toggle('cursor-not-allowed', isBaseDisabled || disableByColor || disableBySize);
-        }
-        if (state.addToCartButtonLabel && !isBaseDisabled) {
-            state.addToCartButtonLabel.textContent = hasColor ? 'أضف إلى السلة' : 'اختر اللون أولاً';
-        }
-        if (state.buyButtonLabel && !isBaseDisabled) {
-            state.buyButtonLabel.textContent = hasColor ? 'اطلب عبر واتساب' : 'اختر اللون أولاً';
-        }
-    }
-
-    function selectColor(colorId, state) {
-        if (!colorId) return;
-        if (state.selectedColorInput) state.selectedColorInput.value = String(colorId);
-        setColorState(colorId, state);
-
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('color', String(colorId));
-        window.history.replaceState({}, '', currentUrl.toString());
-
-        if (state.purchaseForm) {
-            state.purchaseForm.action = '{% url "item:detail" item.id %}?color=' + colorId;
-            const hiddenColorInput = state.purchaseForm.querySelector('input[name="color"]');
-            if (hiddenColorInput) hiddenColorInput.value = String(colorId);
-        }
-        const firstColorImageIndex = colorToImageIndex.get(String(colorId));
-        if (typeof firstColorImageIndex === 'number') {
-            setImageByIndex(firstColorImageIndex, state, { animate: true });
-        }
-        updateActionState(state);
-    }
-
-    function preloadProductImages(state) {
-        productImages.forEach((imageData, index) => {
-            if (imageData.colorId !== null && !colorToImageIndex.has(String(imageData.colorId))) {
-                colorToImageIndex.set(String(imageData.colorId), index);
-            }
-        });
-        if (productImages.length < 2) return;
-        productImages.forEach((imageData) => {
-            const useWebp = imageData.webpUrl && imageData.webpUrl !== imageData.url;
-            const preferred = useWebp ? imageData.webpUrl : imageData.url;
-            preloadImage(preferred)
-                .then(() => {
-                    imageData.resolvedUrl = preferred;
-                })
-                .catch(() => preloadImage(imageData.url).then(() => {
-                    imageData.resolvedUrl = imageData.url;
-                }).catch(() => {
-                    imageData.resolvedUrl = '';
-                }));
-        });
-        if ('IntersectionObserver' in window && state.carousel) {
-            const observer = new IntersectionObserver((entries) => {
-                if (entries.some((entry) => entry.isIntersecting)) {
-                    productImages.forEach((imageData) => {
-                        const targetUrl = preferredImageUrl(imageData);
-                        if (targetUrl) preloadImage(targetUrl).catch(() => { });
-                    });
-                    observer.disconnect();
-                }
-            }, { rootMargin: '300px' });
-            observer.observe(state.carousel);
-        }
-    }
-
-    function initImageNavigation(state) {
-        if (!state.carousel || productImages.length < 2) return;
-
-        const swipeThreshold = 48;
-        const axisLockThreshold = 10;
-        let pointerStartX = 0;
-        let pointerStartY = 0;
-        let deltaX = 0;
-        let deltaY = 0;
-        let isDragging = false;
-        let gestureAxis = null;
-
-        state.carousel.style.touchAction = 'pan-y';
-
-        const onPointerDown = (event) => {
-            if (event.button !== undefined && event.button !== 0) return;
-            pointerStartX = event.clientX;
-            pointerStartY = event.clientY;
-            deltaX = 0;
-            deltaY = 0;
-            isDragging = true;
-            gestureAxis = null;
-        };
-
-        const onPointerMove = (event) => {
-            if (!isDragging) return;
-            deltaX = event.clientX - pointerStartX;
-            deltaY = event.clientY - pointerStartY;
-
-            if (!gestureAxis && (Math.abs(deltaX) > axisLockThreshold || Math.abs(deltaY) > axisLockThreshold)) {
-                gestureAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
-            }
-            if (gestureAxis === 'x') {
-                event.preventDefault();
-            }
-        };
-
-        const onPointerEnd = () => {
-            if (!isDragging) return;
-            isDragging = false;
-            if (gestureAxis === 'x' && Math.abs(deltaX) >= swipeThreshold) {
-                const direction = deltaX < 0 ? 1 : -1;
-                setImageByIndex(activeImageIndex + direction, state);
-            }
-            gestureAxis = null;
-        };
-
-        state.thumbnails.forEach((thumb, index) => {
-            thumb.addEventListener('click', () => setImageByIndex(index, state));
-        });
-
-        const prevButton = state.carousel.querySelector('[data-carousel-prev]');
-        const nextButton = state.carousel.querySelector('[data-carousel-next]');
-        if (prevButton) prevButton.addEventListener('click', () => setImageByIndex(activeImageIndex - 1, state));
-        if (nextButton) nextButton.addEventListener('click', () => setImageByIndex(activeImageIndex + 1, state));
-
-        state.carousel.addEventListener('pointerdown', onPointerDown);
-        state.carousel.addEventListener('pointermove', onPointerMove, { passive: false });
-        window.addEventListener('pointerup', onPointerEnd);
-        window.addEventListener('pointercancel', onPointerEnd);
+    function handleSwipeNavigation(direction) {
+        if (imageCount <= 1) return;
+        const nextIndex = direction === 'next'
+            ? (selectedImageIndex + 1) % imageCount
+            : (selectedImageIndex - 1 + imageCount) % imageCount;
+        window.location.href = buildDetailUrl(nextIndex);
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        const state = {
-            carousel: document.getElementById('imageCarousel'),
-            mainImage: document.getElementById('mainImage'),
-            mainImageLoader: document.getElementById('mainImageLoader'),
-            thumbnails: Array.from(document.querySelectorAll('#imageGallery .image-thumbnail')),
-            colorButtons: Array.from(document.querySelectorAll('[data-color-option]')),
-            selectedColorInput: document.getElementById('selectedColorInput'),
-            addToCartButton: document.getElementById('addToCartButton'),
-            addToCartButtonLabel: document.getElementById('addToCartButtonLabel'),
-            buyButton: document.getElementById('buyButton'),
-            buyButtonLabel: document.getElementById('buyButtonLabel'),
-            purchaseForm: document.getElementById('purchaseForm'),
-            purchaseSubmitButton: document.getElementById('purchaseSubmitButton'),
-            sizeInput: document.getElementById('selectedSizeInput')
+        const carousel = document.getElementById('imageCarousel');
+        if (!carousel || imageCount <= 1) return;
+
+        console.log('Carousel server-driven image count:', imageCount, 'selected index:', selectedImageIndex);
+
+        let startX = 0;
+        let startY = 0;
+        let deltaX = 0;
+        let deltaY = 0;
+        let dragging = false;
+        let axis = null;
+        const SWIPE_THRESHOLD = 40;
+        const AXIS_LOCK = 10;
+
+        carousel.style.touchAction = 'pan-y';
+
+        carousel.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0) return;
+            dragging = true;
+            axis = null;
+            startX = event.clientX;
+            startY = event.clientY;
+        });
+
+        carousel.addEventListener('pointermove', (event) => {
+            if (!dragging) return;
+            deltaX = event.clientX - startX;
+            deltaY = event.clientY - startY;
+            if (!axis && (Math.abs(deltaX) > AXIS_LOCK || Math.abs(deltaY) > AXIS_LOCK)) {
+                axis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
+            }
+            if (axis === 'x') {
+                event.preventDefault();
+            }
+        });
+
+        const endSwipe = () => {
+            if (!dragging) return;
+            dragging = false;
+            if (axis === 'x' && Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+                const direction = deltaX < 0 ? 'next' : 'prev';
+                console.log('Carousel swipe:', direction, 'deltaX:', deltaX);
+                handleSwipeNavigation(direction);
+            }
+            axis = null;
         };
 
-        if (state.mainImage) {
-            state.mainImage.addEventListener('load', () => setMainImageLoading(state.mainImageLoader, false));
-            state.mainImage.addEventListener('error', () => {
-                state.mainImage.src = fallbackImageData;
-                state.mainImage.srcset = '';
-                setMainImageLoading(state.mainImageLoader, false);
-            });
-        }
-
-        if (productImages.length) {
-            setImageByIndex(0, state, { animate: false });
-            initImageNavigation(state);
-            preloadProductImages(state);
-        }
-
-        state.colorButtons.forEach((button) => {
-            button.addEventListener('click', (event) => {
-                event.preventDefault();
-                const colorId = button.dataset.colorId;
-                if (!colorId) return;
-                selectColor(colorId, state);
-            });
-        });
-        updateActionState(state);
-
-        if (state.buyButton) {
-            state.buyButton.addEventListener('click', function () {
-                const form = document.getElementById('requestForm');
-                if (!form) return;
-                form.classList.remove('hidden');
-                state.buyButton.classList.add('hidden');
-                form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
-        }
-
-        const citySelect = document.getElementById('id_city');
-        const placeSelect = document.getElementById('id_place');
-
-        function loadPlaces(cityId, preserveSelected = false) {
-            if (!cityId) {
-                if (placeSelect) {
-                    placeSelect.innerHTML = '<option value="">---------</option>';
-                    placeSelect.disabled = true;
-                }
-                return;
-            }
-
-            if (!placeSelect) return;
-
-            const selectedPlaceId = preserveSelected ? placeSelect.value : null;
-            let url = "{% url 'item:get_places_by_city' city_id=0 %}".replace('0', cityId);
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    placeSelect.innerHTML = '<option value="">---------</option>';
-                    data.places.forEach(place => {
-                        const option = document.createElement('option');
-                        option.value = place.id;
-                        option.textContent = place.name;
-                        if (selectedPlaceId && place.id == selectedPlaceId) {
-                            option.selected = true;
-                        }
-                        placeSelect.appendChild(option);
-                    });
-                    placeSelect.disabled = false;
-                })
-                .catch(() => { });
-        }
-
-        if (citySelect && placeSelect) {
-            citySelect.addEventListener('change', function () {
-                loadPlaces(this.value, false);
-            });
-
-            if (citySelect.value) {
-                loadPlaces(citySelect.value, true);
-            }
-        }
-
-        const sizeSelector = document.getElementById('sizeSelector');
-        const sizeInput = document.getElementById('selectedSizeInput');
-        const sizeValidation = document.getElementById('sizeValidation');
-        const addToCartButton = document.getElementById('addToCartButton');
-        const purchaseForm = document.getElementById('purchaseForm');
-        const purchaseSubmitButton = document.getElementById('purchaseSubmitButton');
-        const whatsappSizeInput = document.getElementById('selectedWhatsappSizeInput');
-
-        if (sizeSelector && sizeInput && addToCartButton) {
-            const baseDisabled = String(addToCartButton.dataset.itemSold || '0') === '1';
-            const sizeRequired = String(addToCartButton.dataset.sizeRequired || '0') === '1';
-            const sizeButtons = Array.from(sizeSelector.querySelectorAll('button[data-size]'));
-
-            const setActiveSize = (selected) => {
-                sizeButtons.forEach((btn) => {
-                    const isActive = String(btn.dataset.size || '') === String(selected || '');
-                    btn.classList.toggle('bg-neutral-900', isActive);
-                    btn.classList.toggle('border-neutral-900', isActive);
-                    btn.classList.toggle('text-white', isActive);
-                    btn.classList.toggle('bg-white', !isActive);
-                    btn.classList.toggle('border-neutral-300', !isActive);
-                    btn.classList.toggle('text-neutral-800', !isActive);
-                    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-                });
-            };
-
-            const setDisabledState = (disabled) => {
-                addToCartButton.disabled = !!disabled;
-                addToCartButton.classList.toggle('opacity-50', !!disabled);
-                addToCartButton.classList.toggle('cursor-not-allowed', !!disabled);
-            };
-
-            const setWhatsappDisabledState = (disabled) => {
-                if (state.buyButton) {
-                    state.buyButton.disabled = !!disabled;
-                    state.buyButton.classList.toggle('opacity-50', !!disabled);
-                    state.buyButton.classList.toggle('cursor-not-allowed', !!disabled);
-                }
-                if (purchaseSubmitButton) {
-                    purchaseSubmitButton.disabled = !!disabled;
-                    purchaseSubmitButton.classList.toggle('opacity-50', !!disabled);
-                    purchaseSubmitButton.classList.toggle('cursor-not-allowed', !!disabled);
-                }
-            };
-
-            const updateSizeState = () => {
-                const hasSize = !!String(sizeInput.value || '').trim();
-                if (whatsappSizeInput) {
-                    whatsappSizeInput.value = hasSize ? sizeInput.value : '';
-                }
-                if (baseDisabled) {
-                    setDisabledState(true);
-                    setWhatsappDisabledState(true);
-                    return;
-                }
-                if (!sizeRequired) {
-                    setDisabledState(false);
-                    setWhatsappDisabledState(false);
-                    updateActionState(state);
-                    return;
-                }
-                setDisabledState(!hasSize);
-                setWhatsappDisabledState(!hasSize);
-                updateActionState(state);
-                if (sizeValidation) {
-                    sizeValidation.classList.toggle('hidden', hasSize);
-                }
-            };
-
-            sizeButtons.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const size = String(btn.dataset.size || '').trim();
-                    sizeInput.value = size;
-                    setActiveSize(size);
-                    updateSizeState();
-                });
-            });
-
-            updateSizeState();
-
-            if (purchaseForm) {
-                purchaseForm.addEventListener('submit', (event) => {
-                    if (!sizeRequired || baseDisabled) return;
-                    const hasSize = !!String(sizeInput.value || '').trim();
-                    if (hasSize) return;
-                    event.preventDefault();
-                    if (sizeValidation) {
-                        sizeValidation.classList.remove('hidden');
-                        sizeValidation.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                });
-            }
-        }
+        window.addEventListener('pointerup', endSwipe);
+        window.addEventListener('pointercancel', endSwipe);
     });
 </script>
 {% endblock %}
