@@ -72,8 +72,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'ghandystore1',
-        'USER': 'root',
-        'PASSWORD': '',
+        'USER': 'JanaHero',
+        'PASSWORD': 'StrongPassword123',
         'HOST': 'localhost',
         'PORT': '3306',
     }
