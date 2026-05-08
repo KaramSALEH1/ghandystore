@@ -157,7 +157,8 @@
                         data-base-disabled="{% if item.is_sold or selected_color and selected_color.is_sold_out %}1{% else %}0{% endif %}"
                         data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
-                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"{% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
+                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span id="addToCartButtonLabel">
                             {% if item.is_sold %}
@@ -365,6 +366,9 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const buyButton = document.getElementById('buyButton');
+        const requestForm = document.getElementById('requestForm');
+        const purchaseForm = document.getElementById('purchaseForm');
+
         if (buyButton) {
             buyButton.addEventListener('click', () => {
                 if (buyButton.classList.contains('cursor-not-allowed') || buyButton.hasAttribute('disabled')) return;
@@ -384,7 +388,77 @@
                     return;
                 }
 
+                // Show the request form
+                if (requestForm) {
+                    requestForm.classList.remove('hidden');
+                    buyButton.closest('.mt-3').classList.add('hidden');
+                    // Focus first input in form
+                    const firstInput = requestForm.querySelector('input, select, textarea');
+                    if (firstInput) {
+                        setTimeout(() => firstInput.focus(), 100);
+                    }
+                }
+            });
+        }
+
+        // Handle purchase form submission - send WhatsApp message instead of POST
+        if (purchaseForm) {
+            purchaseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const customerNameInput = purchaseForm.querySelector('[name="customer_name"]');
+                const customerPhoneInput = purchaseForm.querySelector('[name="customer_phone"]');
+                const citySelect = purchaseForm.querySelector('[name="city"]');
+                const placeSelect = purchaseForm.querySelector('[name="place"]');
+
+                const customerName = customerNameInput ? String(customerNameInput.value || '').trim() : '';
+                const customerPhone = customerPhoneInput ? String(customerPhoneInput.value || '').trim() : '';
+                const cityId = citySelect ? String(citySelect.value || '').trim() : '';
+                const placeId = placeSelect ? String(placeSelect.value || '').trim() : '';
+
+                const cityText = citySelect && citySelect.options[citySelect.selectedIndex]
+                    ? String(citySelect.options[citySelect.selectedIndex].text || '').trim()
+                    : '';
+                const placeText = placeSelect && placeSelect.options[placeSelect.selectedIndex]
+                    ? String(placeSelect.options[placeSelect.selectedIndex].text || '').trim()
+                    : '';
+
+                // Validate required fields
+                if (!customerName) {
+                    customerNameInput?.focus();
+                    alert('من فضلك أدخل اسمك');
+                    return;
+                }
+                if (!customerPhone) {
+                    customerPhoneInput?.focus();
+                    alert('من فضلك أدخل رقم هاتفك');
+                    return;
+                }
+                if (!cityId) {
+                    citySelect?.focus();
+                    alert('من فضلك اختر المحافظة');
+                    return;
+                }
+                if (!placeId) {
+                    placeSelect?.focus();
+                    alert('من فضلك اختر المنطقة');
+                    return;
+                }
+
+                const selectedSizeInput = document.getElementById('selectedWhatsappSizeInput');
+                const selectedSize = selectedSizeInput ? String(selectedSizeInput.value || '').trim() : '';
+
                 const lines = ['طلب جديد من GHANDY', ''];
+                lines.push('');
+                lines.push('--- معلومات العميل ---');
+                lines.push('الاسم: ' + customerName);
+                lines.push('الهاتف: ' + customerPhone);
+                lines.push('');
+                lines.push('--- معلومات التوصيل ---');
+                lines.push('المحافظة: ' + cityText);
+                lines.push('العنوان: ' + placeText);
+                lines.push('');
+                lines.push('--- تفاصيل الطلب ---');
                 lines.push('المنتج: {{ item.name|escapejs }}');
                 {% if selected_color %}
                 lines.push('اللون: {{ selected_color.name|escapejs }}');
