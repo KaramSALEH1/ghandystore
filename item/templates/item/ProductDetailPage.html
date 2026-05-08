@@ -158,7 +158,8 @@
                         data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or
+                        item.available_sizes%}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span id="addToCartButtonLabel">
                             {% if item.is_sold %}
@@ -180,7 +181,8 @@
                         data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-primary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %} {% if show_form %}hidden{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or
+                        item.available_sizes%}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
                         <span id="buyButtonLabel">
                             {% if item.is_sold %}
@@ -342,8 +344,8 @@
     // ============================================
 
     const selectedColorId = '{{ selected_color.id|default_if_none:"" }}';
-    const selectedImageIndex = {{ selected_image_index|default:"0"}};
-    const imageCount = {{ all_images| length |default:0}};
+    const selectedImageIndex = {{ selected_image_index|default: "0"}};
+    const imageCount = {{ all_images| length |default: 0}};
     const detailPath = '{% url "item:detail" item.id %}';
 
     function buildDetailUrl(imageIndex) {
@@ -364,6 +366,100 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // ============================================
+        // Size selector functionality
+        // ============================================
+        const sizeSelector = document.getElementById('sizeSelector');
+        if (sizeSelector) {
+            const sizeButtons = sizeSelector.querySelectorAll('button[data-size]');
+            const selectedSizeInput = document.getElementById('selectedSizeInput');
+            const addToCartButton = document.getElementById('addToCartButton');
+            const buyButton = document.getElementById('buyButton');
+            const addToCartButtonLabel = document.getElementById('addToCartButtonLabel');
+            const buyButtonLabel = document.getElementById('buyButtonLabel');
+            const sizeValidation = document.getElementById('sizeValidation');
+            const purchaseForm = document.getElementById('purchaseForm');
+
+            sizeButtons.forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const size = this.dataset.size;
+
+                    // Update all buttons
+                    sizeButtons.forEach(btn => {
+                        if (btn === this) {
+                            btn.setAttribute('aria-pressed', 'true');
+                        } else {
+                            btn.setAttribute('aria-pressed', 'false');
+                        }
+                    });
+
+                    // Update hidden input
+                    selectedSizeInput.value = size;
+
+                    // Hide validation error
+                    if (sizeValidation) {
+                        sizeValidation.classList.add('hidden');
+                    }
+
+                    // Update form submission to use selected size
+                    if (purchaseForm) {
+                        const whatsappSizeInput = document.getElementById('selectedWhatsappSizeInput');
+                        if (whatsappSizeInput) {
+                            whatsappSizeInput.value = size;
+                        }
+                    }
+
+                    // Enable buttons
+                    if (addToCartButton) {
+                        const isItemSold = addToCartButton.dataset.itemSold === '1';
+                        const isColorSoldOut = document.querySelector('[data-color-option][aria-current="true"]')?.closest('[data-color-option]')?.getAttribute('data-color-name') === 'sold-out';
+
+                        if (!isItemSold && selectedColorId) {
+                            addToCartButton.removeAttribute('disabled');
+                            addToCartButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                            addToCartButtonLabel.textContent = 'أضف إلى السلة';
+                        }
+                    }
+
+                    if (buyButton) {
+                        const isItemSold = buyButton.dataset.itemSold === '1';
+
+                        if (!isItemSold && selectedColorId) {
+                            buyButton.removeAttribute('disabled');
+                            buyButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                            buyButtonLabel.textContent = 'اطلب عبر واتساب';
+                        }
+                    }
+
+                    if (purchaseForm) {
+                        const purchaseSubmitButton = document.getElementById('purchaseSubmitButton');
+                        if (purchaseSubmitButton) {
+                            purchaseSubmitButton.removeAttribute('disabled');
+                            purchaseSubmitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                });
+            });
+
+            // Handle add to cart form submission
+            const addToCartForm = document.getElementById('addToCartForm');
+            if (addToCartForm) {
+                addToCartForm.addEventListener('submit', function (e) {
+                    const sizeRequired = addToCartButton.dataset.sizeRequired === '1';
+                    if (sizeRequired && !selectedSizeInput.value) {
+                        e.preventDefault();
+                        if (sizeValidation) {
+                            sizeValidation.classList.remove('hidden');
+                        }
+                    }
+                });
+            }
+        }
+
+        // ============================================
+        // Server-side image carousel with swipe gestures
+        // ============================================
         const carousel = document.getElementById('imageCarousel');
         if (!carousel || imageCount <= 1) return;
 
