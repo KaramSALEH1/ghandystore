@@ -71,7 +71,7 @@ WSGI_APPLICATION = 'ghandyStore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ghandystore1',
+        'NAME': 'ghandystore',
         'USER': 'JanaHero',
         'PASSWORD': 'StrongPassword123',
         'HOST': 'localhost',
