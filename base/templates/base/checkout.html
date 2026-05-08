@@ -70,6 +70,17 @@
                             {% endfor %}
                         </select>
                     </div>
+
+                    <div>
+                        <label class="label-micro font-arabic" dir="rtl" for="checkoutName">الاسم</label>
+                        <input id="checkoutName" name="customer_name" type="text" class="input font-arabic mt-2"
+                            placeholder="اسمك" dir="rtl" required>
+                    </div>
+                    <div>
+                        <label class="label-micro font-arabic" dir="rtl" for="checkoutPhone">الهاتف</label>
+                        <input id="checkoutPhone" name="customer_phone" type="tel" class="input font-arabic mt-2"
+                            placeholder="رقم الهاتف" dir="rtl" required>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -247,6 +258,8 @@
         const button = document.getElementById('checkoutWhatsAppButton');
         const cityInput = document.getElementById('checkoutCity');
         const placeInput = document.getElementById('checkoutPlace');
+        const nameInput = document.getElementById('checkoutName');
+        const phoneInput = document.getElementById('checkoutPhone');
 
         const getValue = (el) => (el && 'value' in el ? String(el.value || '').trim() : '');
         const getText = (el) => {
@@ -289,7 +302,20 @@
         button.addEventListener('click', () => {
             if (button.classList.contains('cursor-not-allowed')) return;
 
-            if (!cityInput || !placeInput) return;
+            if (!cityInput || !placeInput || !nameInput || !phoneInput) return;
+
+            const nameValue = getValue(nameInput);
+            const phoneValue = getValue(phoneInput);
+            if (!nameValue) {
+                nameInput.focus();
+                alert('من فضلك أدخل اسمك');
+                return;
+            }
+            if (!phoneValue) {
+                phoneInput.focus();
+                alert('من فضلك أدخل رقم الهاتف');
+                return;
+            }
 
             const cityValue = getValue(cityInput);
             const placeValue = getValue(placeInput);
@@ -306,7 +332,7 @@
             const city = getText(cityInput);
             const place = getText(placeInput);
 
-            const lines = ["طلب جديد من GHANDY", ""];
+            const lines = ["طلب جديد من GHANDY", "", '--- معلومات العميل ---', 'الاسم: ' + nameValue, 'الهاتف: ' + phoneValue, '', '--- معلومات التوصيل ---'];
             lines.push("المحافظة: " + city);
             lines.push("العنوان: " + place);
             lines.push("");
