@@ -157,9 +157,7 @@
                         data-base-disabled="{% if item.is_sold or selected_color and selected_color.is_sold_out %}1{% else %}0{% endif %}"
                         data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
-                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or
-                        item.available_sizes%}disabled{% endif %} dir="rtl">
+                        class="btn btn-secondary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"{% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='cart' classes='h-5 w-5' %}
                         <span id="addToCartButtonLabel">
                             {% if item.is_sold %}
@@ -181,8 +179,7 @@
                         data-item-sold="{% if item.is_sold %}1{% else %}0{% endif %}"
                         data-size-required="{% if item.available_sizes %}1{% else %}0{% endif %}"
                         class="btn btn-primary w-full font-arabic {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes %}opacity-50 cursor-not-allowed{% endif %} {% if show_form %}hidden{% endif %}"
-                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or
-                        item.available_sizes%}disabled{% endif %} dir="rtl">
+                        {% if item.is_sold or not selected_color or selected_color.is_sold_out or item.available_sizes%}disabled{% endif %} dir="rtl">
                         {% include 'base/partials/icon.html' with name='whatsapp' classes='h-5 w-5' %}
                         <span id="buyButtonLabel">
                             {% if item.is_sold %}
@@ -344,8 +341,8 @@
     // ============================================
 
     const selectedColorId = '{{ selected_color.id|default_if_none:"" }}';
-    const selectedImageIndex = {{ selected_image_index|default: "0"}};
-    const imageCount = {{ all_images| length |default: 0}};
+    const selectedImageIndex = {{ selected_image_index|default:"0"}};
+    const imageCount = {{ all_images| length |default:0}};
     const detailPath = '{% url "item:detail" item.id %}';
 
     function buildDetailUrl(imageIndex) {
