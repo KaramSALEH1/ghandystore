@@ -481,7 +481,7 @@
                 lines.push('');
                 lines.push('الإجمالي: {{ item.price|floatformat:2 }} ل.س');
 
-                const number = buyButton.dataset.whatsappNumber || '';
+                const number = +963937341881;
                 const encoded = encodeURIComponent(lines.join('\n'));
                 window.open(`https://wa.me/${number}?text=${encoded}`, '_blank', 'noopener');
             });
