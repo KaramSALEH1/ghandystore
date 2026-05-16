@@ -223,8 +223,20 @@
                         {% endif %}
                         {{ form.customer_name }}
                         {{ form.customer_phone }}
-                        {{ form.city }}
-                        {{ form.place }}
+                        <select id="id_city" name="city" class="input font-arabic" dir="rtl" required>
+                            <option value="" selected disabled>اختر المحافظة</option>
+                            {% for city in cities %}
+                            <option value="{{ city.id }}">{{ city.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="id_place" name="place" class="input font-arabic" dir="rtl" required disabled>
+                            <option value="" selected disabled>اختر المنطقة</option>
+                            {% for city in cities %}
+                            {% for place in city.places.all %}
+                            <option value="{{ place.id }}" data-city-id="{{ city.id }}">{{ place.name }}</option>
+                            {% endfor %}
+                            {% endfor %}
+                        </select>
                         <button type="submit" id="purchaseSubmitButton"
                             class="btn btn-primary w-full font-arabic {% if item.available_sizes %}opacity-50 cursor-not-allowed{% endif %}"
                             {% if item.available_sizes %}disabled{% endif %} dir="rtl">
@@ -475,6 +487,32 @@
                 const encoded = encodeURIComponent(lines.join('\n'));
                 window.open(`https://wa.me/${number}?text=${encoded}`, '_blank', 'noopener');
             });
+        }
+
+        // City → place dynamic filtering
+        const citySelectEl = document.getElementById('id_city');
+        const placeSelectEl = document.getElementById('id_place');
+        if (citySelectEl instanceof HTMLSelectElement && placeSelectEl instanceof HTMLSelectElement) {
+            const allPlaces = Array.from(placeSelectEl.querySelectorAll('option[data-city-id]')).map((opt) => ({
+                cityId: String(opt.dataset.cityId || ''),
+                value: String(opt.value || ''),
+                text: String(opt.text || ''),
+            }));
+            const renderPlaces = () => {
+                const cityId = citySelectEl.value;
+                const matching = allPlaces.filter((p) => p.cityId === cityId);
+                const placeholderText = matching.length ? 'اختر المنطقة' : 'لا توجد مناطق';
+                placeSelectEl.innerHTML = `<option value="" selected disabled>${placeholderText}</option>`;
+                matching.forEach((p) => {
+                    const option = document.createElement('option');
+                    option.value = p.value;
+                    option.text = p.text;
+                    placeSelectEl.appendChild(option);
+                });
+                placeSelectEl.disabled = !cityId || !matching.length;
+            };
+            renderPlaces();
+            citySelectEl.addEventListener('change', renderPlaces);
         }
 
         // ============================================

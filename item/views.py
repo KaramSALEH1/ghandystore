@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from urllib.parse import quote
 
 from .forms import NewItemForm, EditItemForm, ItemRequestForm
-from .models import Category, Item, Place, ItemColor
+from .models import Category, Item, Place, ItemColor, City
 
 
 def _safe_image_url(file_field) -> str:
@@ -316,7 +316,8 @@ def detail(request, pk):
         'prev_image_index': prev_image_index,
         'next_image_index': next_image_index,
         'form': form,
-        'show_form': show_form
+        'show_form': show_form,
+        'cities': City.objects.prefetch_related('places').all(),
     })
 
 def items(request):
