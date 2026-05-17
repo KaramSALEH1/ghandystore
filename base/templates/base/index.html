@@ -31,7 +31,7 @@
             </div>
         </div>
         <div class="relative lg:col-span-7">
-            <div class="media-frame h-[320px] sm:h-[400px] lg:h-[460px] relative overflow-hidden" id="heroCarousel">
+            <div class="media-frame" id="heroCarousel">
                 {% for item in items %}
                 {% if item.image_url %}
                 <img src="{{ item.image_url }}" srcset="{{ item.image_url|responsive_srcset }}"
@@ -39,8 +39,7 @@
                     loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
                     fetchpriority="{% if forloop.first %}high{% else %}auto{% endif %}"
                     decoding="async" width="1280" height="740"
-                    class="hero-slide absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-in-out {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}"
-                    onerror="this.style.display='none'">
+                    class="hero-slide{% if forloop.first %} active{% endif %}">
                 {% endif %}
                 {% endfor %}
             </div>
@@ -65,17 +64,42 @@
     </div>
 </section>
 
+<style>
+    #heroCarousel {
+        height: 320px;
+        position: relative;
+        overflow: hidden;
+    }
+    @media (min-width: 640px) {
+        #heroCarousel { height: 400px; }
+    }
+    @media (min-width: 1024px) {
+        #heroCarousel { height: 460px; }
+    }
+    #heroCarousel .hero-slide {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 800ms ease-in-out;
+        transform: none !important;
+    }
+    #heroCarousel .hero-slide.active {
+        opacity: 1;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const slides = Array.from(document.querySelectorAll('#heroCarousel .hero-slide'));
         if (slides.length < 2) return;
         let current = 0;
         setInterval(function () {
-            slides[current].classList.remove('opacity-100');
-            slides[current].classList.add('opacity-0');
+            slides[current].classList.remove('active');
             current = (current + 1) % slides.length;
-            slides[current].classList.remove('opacity-0');
-            slides[current].classList.add('opacity-100');
+            slides[current].classList.add('active');
         }, 3000);
     });
 </script>
